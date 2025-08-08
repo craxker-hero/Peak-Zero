@@ -131,9 +131,9 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
       text: text.trim(),
       contextInfo: {
         externalAdReply: {
-          title: "✨ MENÚ AI HOSHINO ✨",
-          body: "Bot multifuncional con diversión y utilidades",
-          thumbnailUrl: "https://telegra.ph/file/4c3e4b782c82511b3874d.mp4", // Imagen grande
+          title: "Mila WaBot",
+          body: "developed by craxker",
+          thumbnailUrl: "https://o.uguu.se/RaBjBlyt.jpg", // Imagen grande
           sourceUrl: "",
           mediaType: 1,
           renderLargerThumbnail: true, // Hacer la miniatura más grande
