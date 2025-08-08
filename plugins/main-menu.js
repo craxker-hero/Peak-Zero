@@ -122,7 +122,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
 
     text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
 
-    let banner = 'https://telegra.ph/file/e2f791011e8d183bd6b50.jpg' // banner tipo anime
+    let banner = 'https://o.uguu.se/ErTRFZXk.jpg' // banner tipo anime
     await m.react('⭐')
 
     await conn.sendMessage(m.chat, {
