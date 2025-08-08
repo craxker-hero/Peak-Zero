@@ -138,7 +138,7 @@ await conn.sendMessage(m.chat, {
   contextInfo: {
     externalAdReply: {
       title: "✨ Menú del Bot ✨",
-      body: "Mila - WaBot"
+      body: "Mila - WaBot",
       thumbnailUrl: "https://o.uguu.se/ErTRFZXk.jpg", // URL pública de la imagen como banner
       sourceUrl: "",
       mediaType: 1,
