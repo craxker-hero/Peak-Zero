@@ -12,7 +12,7 @@ const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function (
     clearTimeout(this)
     resolve()
 }, ms))
- 
+
 export async function handler(chatUpdate) {
     this.msgqueque = this.msgqueque || []
     if (!chatUpdate)
@@ -122,7 +122,7 @@ export async function handler(chatUpdate) {
         if (opts['swonly'] && m.chat !== 'status@broadcast')  return
         if (typeof m.text !== 'string')
             m.text = ''
-        
+
 
         let _user = global.db.data && global.db.data.users && global.db.data.users[m.sender]
 
@@ -146,7 +146,7 @@ export async function handler(chatUpdate) {
         m.exp += Math.ceil(Math.random() * 10)
 
         let usedPrefix
-        
+
         const groupMetadata = (m.isGroup ? ((conn.chats[m.chat] || {}).metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}) || {}
         const participants = (m.isGroup ? groupMetadata.participants : []) || []
         const user = (m.isGroup ? participants.find(u => conn.decodeJid(u.id) === m.sender) : {}) || {}
@@ -346,6 +346,22 @@ export async function handler(chatUpdate) {
                 break
             }
         }
+        
+        // Respuesta para comandos no existentes
+        if (usedPrefix && !m.plugin) {
+            const prefixRegex = new RegExp(`^[${(opts['prefix'] || '‎z/#$%.\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&')}]`)
+            const prefixMatch = m.text.match(prefixRegex)
+            if (prefixMatch) {
+                const usedPrefix = prefixMatch[0]
+                const noPrefix = m.text.replace(usedPrefix, '').trim().split(' ')[0]
+                conn.reply(m.chat, 
+                    `「✧」» El comando *${noPrefix || usedPrefix}* no existe.\n\n` +
+                    `Para ver la lista de comandos usa:\n» *${usedPrefix}help*`, 
+                    m
+                )
+            }
+        }
+
     } catch (e) {
         console.error(e)
     } finally {
