@@ -27,13 +27,8 @@ export async function before(m, { conn }) {
         // Canales disponibles
         const channels = [
             {
-                id: "120363191779210764@newsletter",
-                name: "【 ✯ Starlights Team - Oficial Channel ✰ 】",
-                description: "Canal oficial del equipo Starlights"
-            },
-            {
                 id: "120363420466566193@newsletter",
-                name: "✰ Let Go Vibes World ダーク",
+                name: "【 ✯ Mila - Wa Team ✰ 】",
                 description: "Vibes positivas y contenido único"
             }
         ];
