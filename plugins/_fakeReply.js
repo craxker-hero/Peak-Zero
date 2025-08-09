@@ -3,6 +3,17 @@ import fetch from 'node-fetch'
 export async function before(m, { conn }) {
 let img = await (await fetch(`https://tinyurl.com/2c5hk765`)).buffer()
 
+  const canales = [
+    {
+      id: "120363191779210764@newsletter",
+      nombre: "【 ✯ Starlights Team - Oficial Chanel ✰ 】",
+    },
+    {
+      id: "120363352146629838@newsletter",
+      nombre: "✰ Let Go Vibes World ダーク",
+    },
+  ]
+
 
   const canalSeleccionado = canales[Math.floor(Math.random() * canales.length)]
 
