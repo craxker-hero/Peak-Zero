@@ -1,5 +1,4 @@
 import speed from 'performance-now'
-import { exec } from 'child_process'
 
 let handler = async (m, { conn }) => {
   // Iniciamos el temporizador
@@ -11,8 +10,8 @@ let handler = async (m, { conn }) => {
   // Calculamos la latencia
   let latensi = speed() - timestamp
   
-  // Preparamos el mensaje editado
-  let finalMsg = `✦ ¡Pong!\n\n✰ ¡Pong!\n> Tiempo ⴵ ${latensi.toFixed(0)}ms`
+  // Preparamos el mensaje editado (solo con la nueva versión)
+  let finalMsg = `✰ ¡Pong!\n> Tiempo ⴵ ${latensi.toFixed(0)}ms`
   
   // Editamos el mensaje original
   await conn.relayMessage(m.chat, {
