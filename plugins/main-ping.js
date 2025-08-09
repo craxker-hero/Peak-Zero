@@ -12,7 +12,7 @@ let handler = async (m, { conn }) => {
   }) 
   let timestamp = speed()
   let latensi = speed() - timestamp
-  
+
   let _muptime
     _muptime = await new Promise(resolve => {
         exec('cat /proc/uptime', (error, stdout) => {
@@ -25,22 +25,20 @@ let handler = async (m, { conn }) => {
     })
   let muptime = clockString(_muptime)
 
-  exec('uname -a', (error, stdout, stderr) => {
-
-    exec('cat /proc/cpuinfo', (error, stdout, stderr) => {
-      let cpuInfo = stdout.toString("utf-8")
-      let procesador = (cpuInfo.match(/model name\s*:\s*(.*)/) || [])[1] || 'Unknown'
-      let cpu = (cpuInfo.match(/cpu MHz\s*:\s*(.*)/) || [])[1] || 'Unknown'
-
-      exec('free -m', (error, stdout, stderr) => {
-
-        exec('uptime -p', (error, stdout, stderr) => {
-
-          conn.reply(m.chat, `*» Velocidad* : ${latensi.toFixed(4)} _ms_\n*» Procesador* : ${procesador}\n*» CPU* : ${cpu} MHz\n*» RAM* : ${format(totalmem() - freemem())} / ${format(totalmem())}\n*» Tiempo de actividad* : ${muptime}`, m, rcanal)
-        })
-      })
-    })
-  })
+  // Primero envía el mensaje inicial
+  let pingMsg = await conn.sendMessage(m.chat, { text: '✦ ¡Pong!' }, { quoted: m })
+  
+  // Luego edita el mensaje para agregar la información de latencia
+  let finalMsg = `✦ ¡Pong!\n\n✰ ¡Pong!\n> Tiempo ⴵ ${latensi.toFixed(0)}ms`
+  await conn.relayMessage(m.chat, {
+    protocolMessage: {
+      key: pingMsg.key,
+      type: 14,
+      editedMessage: {
+        conversation: finalMsg
+      }
+    }
+  }, {})
 }
 
 handler.help = ['ping']
