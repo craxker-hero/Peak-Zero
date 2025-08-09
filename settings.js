@@ -23,7 +23,7 @@ global.prems = []
 global.packname = ``
 global.author = '{\n "bot": {\n   "name": "Mila",\n     "author": "Craxker",\n   "status_bot": "active"\n }\n}'
 global.wait = '🐢 *Aɢᴜᴀʀᴅᴇ ᴜɴ ᴍᴏᴍᴇɴᴛᴏ, sᴏʏ ʟᴇɴᴛᴀ... ฅ^•ﻌ•^ฅ*'
-global.botname = '✯ Ai Hoshino - MD ✰'
+global.botname = '✯ Mila - WaBot ✰'
 global.textbot = `Powered By Craxker`
 global.listo = '*Aqui tiene ฅ^•ﻌ•^ฅ*'
 global.namechannel = '【 ✯ Mila - WaBot ✰ 】'
@@ -36,8 +36,6 @@ global.miniurl = fs.readFileSync('./storage/img/miniurl.jpg')
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
 global.group = 'https://chat.whatsapp.com/Lp9gBDfaRIp6W9sEbpgjEF'
-global.group2 = 'https://chat.whatsapp.com/EXVs651isvlB7MuHiwcLl8'
-global.group3 = 'https://chat.whatsapp.com/CKF7jbLN877GLxoIJdbhq1'
 global.canal = 'https://whatsapp.com/channel/0029VbAh8QO2Jl8CHj5ojQ0R'
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
