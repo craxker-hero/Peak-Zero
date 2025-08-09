@@ -15,7 +15,7 @@ export async function before(m, { conn }) {
         // Obtener imagen optimizado con manejo de errores
         let img;
         try {
-            const imageUrl = 'https://tinyurl.com/2c5hk765'; // Considera usar una URL directa si es posible
+            const imageUrl = 'https://qu.ax/nUsJt.jpg'; // Considera usar una URL directa si es posible
             const response = await fetch(imageUrl);
             if (!response.ok) throw new Error(`Error al obtener imagen: ${response.status}`);
             img = await response.buffer();
