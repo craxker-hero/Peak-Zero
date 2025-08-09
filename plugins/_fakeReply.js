@@ -1,50 +1,80 @@
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
 
 export async function before(m, { conn }) {
-let img = await (await fetch(`https://tinyurl.com/2c5hk765`)).buffer()
+    try {
+        // Configuración reutilizable
+        const botConfig = {
+            name: botname,
+            description: textbot,
+            media: {
+                url: canal,
+                type: 1 // 1 = PHOTO
+            }
+        };
 
-  const canales = [
-    {
-      id: "120363191779210764@newsletter",
-      nombre: "【 ✯ Starlights Team - Oficial Chanel ✰ 】",
-    },
-    {
-      id: "120363352146629838@newsletter",
-      nombre: "✰ Let Go Vibes World ダーク",
-    },
-  ]
+        // Obtener imagen optimizado con manejo de errores
+        let img;
+        try {
+            const imageUrl = 'https://tinyurl.com/2c5hk765'; // Considera usar una URL directa si es posible
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error(`Error al obtener imagen: ${response.status}`);
+            img = await response.buffer();
+        } catch (error) {
+            console.error('Error al cargar la imagen:', error);
+            img = null; // O podrías establecer una imagen por defecto
+        }
 
+        // Canales disponibles
+        const channels = [
+            {
+                id: "120363191779210764@newsletter",
+                name: "【 ✯ Starlights Team - Oficial Channel ✰ 】",
+                description: "Canal oficial del equipo Starlights"
+            },
+            {
+                id: "120363352146629838@newsletter",
+                name: "✰ Let Go Vibes World ダーク",
+                description: "Vibes positivas y contenido único"
+            }
+        ];
 
-  const canalSeleccionado = canales[Math.floor(Math.random() * canales.length)]
+        // Selección aleatoria de canal
+        const randomChannel = channels[Math.floor(Math.random() * channels.length)];
 
-  global.rcanal = {
-    contextInfo: {
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: canalSeleccionado.id,
-        serverMessageId: 100,
-        newsletterName: canalSeleccionado.nombre,
-      },
-    },
-  }
+        // Configuración global optimizada
+        global.rcanal = {
+            contextInfo: {
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: randomChannel.id,
+                    serverMessageId: 100, // Considera generar un ID único si es necesario
+                    newsletterName: randomChannel.name
+                }
+            }
+        };
 
- global.adReply = {
-	    contextInfo: { 
-             forwardingScore: 9999, 
-                 isForwarded: false, 
-                    externalAdReply: {
-				    showAdAttribution: true,
-					title: botname,
-					body: textbot,
-					mediaUrl: null,
-					description: null,
-					previewType: "PHOTO",
-					thumbnailUrl: img,
+        global.adReply = {
+            contextInfo: {
+                forwardingScore: 9999,
+                isForwarded: false,
+                externalAdReply: {
+                    showAdAttribution: true,
+                    title: botConfig.name,
+                    body: botConfig.description,
+                    mediaUrl: botConfig.media.url,
+                    mediaType: botConfig.media.type,
+                    description: randomChannel.description, // Añadido descripción del canal
+                    previewType: "PHOTO",
+                    thumbnailUrl: img,
                     thumbnail: img,
-		           sourceUrl: canal,
-		           mediaType: 1,
-                   renderLargerThumbnail: true
-				}
-			}
-		}
+                    sourceUrl: botConfig.media.url,
+                    renderLargerThumbnail: true
+                }
+            }
+        };
+
+    } catch (error) {
+        console.error('Error en la función before:', error);
+        // Podrías añadir un manejo de errores más específico aquí
+    }
 }
