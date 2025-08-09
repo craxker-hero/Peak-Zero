@@ -4,14 +4,8 @@ let img = `https://i.pinimg.com/736x/6e/5b/9a/6e5b9a6cf03311b94229cb3736d70bdc.j
 
 let txt = `*Hola!, te invito a unirte a los grupos oficiales de del Bot para convivir con la comunidad :D*
 
-1- 【 ✯ Starlights Team ✰ 】
+1- 【 ✯ Mila - WaBot ✰ 】
 *✰* ${global.group}
-
-2- 【 ✯ Starlights Team ✰ 】- ll
-*✰* ${global.group2}
-
-3- 【 ✯ Starlights Team ✰ 】- lll
-*✰* ${global.group3}
 
 *─ׄ─ׅ─ׄ⭒─ׄ─ׅ─ׄ⭒─ׄ─ׅ─ׄ⭒─ׄ─ׅ─ׄ⭒─ׄ─ׅ─ׄ⭒─ׄ─ׅ─ׄ*
 
