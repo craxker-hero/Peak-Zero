@@ -32,7 +32,7 @@ export async function before(m, { conn }) {
                 description: "Canal oficial del equipo Starlights"
             },
             {
-                id: "120363352146629838@newsletter",
+                id: "120363420466566193@newsletter",
                 name: "✰ Let Go Vibes World ダーク",
                 description: "Vibes positivas y contenido único"
             }
