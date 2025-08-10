@@ -63,7 +63,7 @@ handler.before = async function (m) {
     return true
 }
 
-handler.help = ['level', 'nivel']
+handler.help = ['level', 'levelup']
 handler.tags = ['rpg']
 handler.command = /^(nivel|lvl|level|levelup|niveles)$/i
 export default handler
