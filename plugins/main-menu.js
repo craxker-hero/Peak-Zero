@@ -132,7 +132,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
       contextInfo: {
         externalAdReply: {
           title: "Peak-Zero",
-          body: "developed by craxker",
+          body: "developed by あ ┊ 𝐂𝐫𝐚𝐱𝐤𝐞𝐫",
           thumbnailUrl: "https://files.catbox.moe/aoeq17", // Imagen grande
           sourceUrl: "",
           mediaType: 1,
