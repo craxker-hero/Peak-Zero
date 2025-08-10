@@ -1,43 +1,85 @@
 import { createHash } from 'crypto'
-import fs from 'fs'
-import fetch from 'node-fetch'
+import PhoneNumber from 'awesome-phonenumber'
 
-let Reg = /\|?(.*)([.|] *?)([0-9]*)$/i
-let handler = async function (m, { conn, text, usedPrefix, command }) {
-  let user = global.db.data.users[m.sender]
-  let name2 = conn.getName(m.sender)
-  if (user.registered === true) return m.reply(`[ ✰ ] Ya estás registrado.`)
-  if (!Reg.test(text)) return m.reply(`*[ ✰ ] Por favor, ingresa tu nombre de usuario para proceder con el registro.*\n\n*🍟 Ejem. de Uso* :\n*${usedPrefix + command}* おDanịel.xyz.19`)
-  let [_, name, splitter, age] = text.match(Reg)
-  if (!name) return conn.reply(m.chat, '[ ✰ ] El nombre no puede estar vacío.', m, rcanal)
-  if (!age) return conn.reply(m.chat, '[ ✰ ] La edad no puede estar vacía.', m, rcanal)
-  age = parseInt(age)
-  user.name = name.trim()
-  user.age = age
-  user.regTime = +new Date()
-  user.registered = true
-  let sn = createHash('md5').update(m.sender).digest('hex')
-  let img = await conn.profilePictureUrl(m.sender, 'image').catch(_ => 'https://i.ibb.co/J5YVhwt/file.jpg')
-  
-  let now = new Date()
-  let date = now.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-  let time = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  
-  let txt = '*`—  R E G I S T R O  〤  U S E R`*\n\n'
-      txt += `\t\t*» Tag* :: @${m.sender.split('@')[0]}\n`
-      txt += `\t\t*» Nombre* :: ${name}\n`
-      txt += `\t\t*» Edad* :: ${age} años\n\n`
-      txt += `\t\t*» Fecha* :: ${date}\n`
-      txt += `\t\t*» Hora* :: ${time}\n\n`
-      txt += `> Escribe *${usedPrefix}profile* para ver tu perfil.`
-      
-  await conn.sendFile(m.chat, img, 'perfil.jpg', txt, m, false, { mentions: [m.sender] })
-  await m.react('✅')
+let handler = async function (m, { conn }) {
+  // Función para registrar automáticamente
+  let registerUser = async (sender) => {
+    let user = global.db.data.users[sender]
+    if (user.registered) return false
+    
+    let name = conn.getName(sender)
+    let phoneNumber = PhoneNumber('+' + sender.split('@')[0]).getNumber('international')
+    
+    // Datos básicos del registro
+    user.name = name || 'Usuario'
+    user.regTime = +new Date()
+    user.registered = true
+    user.phone = phoneNumber || ''
+    user.serial = createHash('md5').update(sender).digest('hex')
+    
+    // Valores por defecto (pueden cambiarse después)
+    user.age = 0 // 0 indica no especificado
+    user.birthdate = '' // Para usar con /setbirth
+    
+    return true
+  }
+
+  // Registrar al usuario si no lo está
+  await registerUser(m.sender)
 }
 
-handler.help = ['reg'].map(v => v + ' *<nombre.edad>*')
-handler.tags = ['rg']
+// Comando para establecer fecha de nacimiento
+let setbirthHandler = async (m, { conn, args }) => {
+  let user = global.db.data.users[m.sender]
+  
+  if (!user.registered) {
+    await registerUser(m.sender)
+  }
+  
+  if (!args[0]) return m.reply(`✳️ Uso: /setbirth DD/MM/YYYY\nEjemplo: /setbirth 15/04/1995`)
+  
+  let birthdate = args[0]
+  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(birthdate)) {
+    return m.reply('⚠︎ Formato incorrecto. Usa DD/MM/YYYY')
+  }
+  
+  let [day, month, year] = birthdate.split('/').map(Number)
+  let birthDate = new Date(year, month - 1, day)
+  let today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  
+  // Verificar si ya pasó el cumpleaños este año
+  if (today.getMonth() < birthDate.getMonth() || 
+      (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+    age--
+  }
+  
+  if (age < 5) return m.reply('✧ Edad mínima: 5 años')
+  if (age > 100) return m.reply('✦ Edad máxima: 100 años')
+  
+  user.birthdate = birthdate
+  user.age = age
+  
+  m.reply(`❐ Fecha de nacimiento registrada:\n▸ Edad: ${age} años\n▸ Cumpleaños: ${day}/${month}`)
+}
 
-handler.command = ['verify', 'reg', 'register', 'registrar']
+// Registrar automáticamente antes de cualquier comando
+handler.before = async function (m) {
+  if (!m.isGroup && global.db.data.users[m.sender] && !global.db.data.users[m.sender].registered) {
+    let name = conn.getName(m.sender)
+    let user = global.db.data.users[m.sender]
+    
+    user.name = name || 'Usuario'
+    user.regTime = +new Date()
+    user.registered = true
+    user.phone = PhoneNumber('+' + m.sender.split('@')[0]).getNumber('international') || ''
+    user.serial = createHash('md5').update(m.sender).digest('hex')
+    user.age = 0
+    user.birthdate = ''
+  }
+  return true
+}
 
+// Asignar handlers
 export default handler
+export { setbirthHandler }
