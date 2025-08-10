@@ -1,7 +1,7 @@
 import { canLevelUp, xpRange } from '../lib/levelling.js'
 import fetch from 'node-fetch'
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, usedPrefix }) => {
     let user = global.db.data.users[m.sender]
     if (!user) {
         global.db.data.users[m.sender] = {
@@ -13,10 +13,8 @@ let handler = async (m, { conn }) => {
         user = global.db.data.users[m.sender]
     }
 
-    // Imagen de fondo para el level up
     let img = await (await fetch('https://telegra.ph/file/b97148e2154508f63d909.jpg')).buffer()
     
-    // Verificar si puede subir de nivel
     if (!canLevelUp(user.level, user.exp, global.multiplier)) {
         let { min, xp, max } = xpRange(user.level, global.multiplier)
         let currentXP = user.exp - min
@@ -25,15 +23,15 @@ let handler = async (m, { conn }) => {
         let txt = `*「✿」Sistema de Niveles*\n\n`
         txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
         txt += `▸ *Nivel actual*: ${user.level}\n`
-        txt += `▸ *Experiencia (XP)*: ${user.exp}\n`
+        txt += `▸ *Experiencia*: ${user.exp} XP\n`
         txt += `▸ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
-        txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!`
+        txt += `Necesitas *${max - user.exp} XP* más para subir de nivel\n\n`
+        txt += `Usa *${usedPrefix}help* para ver comandos disponibles`
         
         await conn.sendFile(m.chat, img, 'level.jpg', txt, m)
         return
     }
     
-    // Subir de nivel
     let before = user.level
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
@@ -42,7 +40,7 @@ let handler = async (m, { conn }) => {
         txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
         txt += `▸ *Nivel anterior*: ${before}\n`
         txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
-        txt += `¡Sigue interactuando para subir más de nivel!`
+        txt += `¡Felicidades! Sigue interactuando para subir más`
         
         await conn.sendFile(m.chat, img, 'levelup.jpg', txt, m)
     }
@@ -59,11 +57,22 @@ handler.before = async function (m) {
         
         // Actualizar última actividad
         user.lastActive = +new Date()
+        
+        // Subir de nivel automáticamente si es posible
+        while (canLevelUp(user.level, user.exp, global.multiplier || 1)) {
+            user.level++
+            let txt = `*「🎉 ¡Level Up!」*\n\n`
+            txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
+            txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
+            txt += `¡Logrado automáticamente!`
+            
+            await conn.sendMessage(m.chat, { text: txt }, { quoted: m })
+        }
     }
     return true
 }
 
-handler.help = ['level', 'levelup']
+handler.help = ['level', 'nivel']
 handler.tags = ['rpg']
 handler.command = /^(nivel|lvl|level|levelup|niveles)$/i
 export default handler
