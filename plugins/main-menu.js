@@ -28,7 +28,7 @@ const defaultMenu = {
   before: `
 ─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─
 
-*Hola %name soy Ai Peak-Zero, %greeting*
+*Hola %name soy Peak-Zero, %greeting*
 
 ╭── ︿︿︿︿︿ ⭒   ⭒   ⭒   ⭒   ⭒   ⭒
 ┊ ‹‹ Hello :: %name
@@ -133,7 +133,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
         externalAdReply: {
           title: "Peak-Zero",
           body: "developed by craxker",
-          thumbnailUrl: "https://files.catbox.moe/h7rkvj.jpg", // Imagen grande
+          thumbnailUrl: "https://files.catbox.moe/aoeq17", // Imagen grande
           sourceUrl: "",
           mediaType: 1,
           renderLargerThumbnail: true, // Hacer la miniatura más grande
