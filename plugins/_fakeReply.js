@@ -18,7 +18,7 @@ export async function before(m, { conn }) {
             const imageUrl = 'https://qu.ax/nUsJt.jpg'; // Considera usar una URL directa si es posible
             const response = await fetch(imageUrl);
             if (!response.ok) throw new Error(`Error al obtener imagen: ${response.status}`);
-            img = await response.buffer();
+            img = Buffer.from(await response.arrayBuffer());
         } catch (error) {
             console.error('Error al cargar la imagen:', error);
             img = null; // O podrías establecer una imagen por defecto
