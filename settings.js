@@ -11,13 +11,13 @@ const metadata = {
   packname: '',
   author: JSON.stringify({
     bot: {
-      name: "Mila",
+      name: "Peak-Zero",
       author: "Craxker",
       status_bot: "active"
     }
   }, null, 2),
   waitMessage: '✰ *Aguarde un momento, soy lenta... ฅ^•ﻌ•^ฅ*',
-  botName: '✯ Mila - WaBot ✰',
+  botName: '✯ Peak - WaBot ✰',
   botDescription: 'Powered By Craxker',
   readyMessage: '*Aqui tiene ฅ^•ﻌ•^ฅ*',
   channelName: '【 ✯ Mila - WaBot ✰ 】'
