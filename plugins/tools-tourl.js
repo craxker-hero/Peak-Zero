@@ -1,108 +1,107 @@
-import uploadImage from '../lib/uploadImage.js'
 import { fileTypeFromBuffer } from 'file-type'
 import fetch from 'node-fetch'
 
-let handler = async (m) => {
+let handler = async (m, { conn, usedPrefix, command }) => {
+  // Verificar si hay mensaje citado o media adjunta
   let q = m.quoted ? m.quoted : m
   let mime = (q.msg || q).mimetype || ''
   
-  if (!mime) return m.reply('🚩 Responde a una *Imagen* o *Vídeo* para subir a Telegraph.')
+  if (!mime) return m.reply(`❌ *Debes responder o enviar una imagen/vídeo*\nEjemplo: ${usedPrefix + command}`)
   
   await m.react('🕓')
 
   try {
+    // Descargar el archivo
     let media = await q.download()
-    const fileType = await fileTypeFromBuffer(media)
-    
-    if (!fileType) return m.reply('❌ Formato de archivo no reconocido')
-    
-    // Tipos MIME permitidos (extendidos)
+    if (!media || media.length === 0) throw new Error('Archivo vacío o no descargable')
+
+    // Detectar tipo de archivo
+    let fileType
+    try {
+      fileType = await fileTypeFromBuffer(media)
+      if (!fileType) throw new Error('Tipo de archivo no reconocido')
+    } catch (e) {
+      console.error(e)
+      throw new Error('Formato de archivo no compatible')
+    }
+
+    // Validar tipos permitidos
     const allowedTypes = [
       'image/jpeg',
       'image/png',
       'image/webp',
       'image/gif',
-      'video/mp4',
-      'video/quicktime'
+      'video/mp4'
     ]
     
     if (!allowedTypes.includes(fileType.mime)) {
-      return m.reply(`❌ Formato no soportado: ${fileType.mime}\nSolo se permiten imágenes (JPEG, PNG, WEBP, GIF) y vídeos (MP4)`)
+      throw new Error(`Formato ${fileType.mime} no soportado. Solo imágenes (JPEG, PNG, WEBP, GIF) y MP4`)
     }
 
-    // Límite de tamaño (10MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (media.length > maxSize) {
-      return m.reply(`❌ Archivo demasiado grande (${formatBytes(media.length)})\nEl límite es ${formatBytes(maxSize)}`)
-    }
+    // Subir a Telegraph (versión alternativa)
+    let link = await uploadToTelegraph(media, fileType.mime)
+    if (!link) throw new Error('Error al subir a Telegraph')
 
-    let link
+    // Obtener vista previa
+    let previewBuffer
     try {
-      link = await uploadImage(media)
-      if (!link.startsWith('https://telegra.ph/file/')) {
-        throw new Error('Enlace no válido recibido de Telegraph')
-      }
-    } catch (uploadError) {
-      console.error('Error al subir:', uploadError)
-      throw new Error('Error al subir a Telegraph. Intenta con otro archivo.')
-    }
-    
-    // Obtener thumbnail/previsualización
-    let imgBuffer
-    try {
-      const imgResponse = await fetch(link)
-      imgBuffer = await imgResponse.buffer()
+      const res = await fetch(link)
+      previewBuffer = await res.buffer()
     } catch {
-      imgBuffer = media // Usar el archivo original si falla la descarga
+      previewBuffer = media.slice(0, 30720) // Usar parte del archivo como preview
     }
 
-    // Acortar URL
-    let shortUrlText = 'Error al acortar'
-    try {
-      shortUrlText = await shortUrl(link)
-    } catch (shortError) {
-      console.error('Error al acortar URL:', shortError)
-    }
+    // Construir mensaje de respuesta
+    let txt = `*🖼 Telegraph Uploader*\n\n`
+    txt += `• *Tipo*: ${fileType.mime}\n`
+    txt += `• *Tamaño*: ${formatBytes(media.length)}\n`
+    txt += `• *Enlace*: ${link}\n`
+    txt += `• *Acortado*: ${await shortUrl(link)}\n\n`
+    txt += `_El enlace ${fileType.mime.startsWith('image') ? 'no expira' : 'puede expirar después de 30 días'}_`
 
-    // Construir mensaje
-    let txt = `*🖼️ T E L E G R A P H - U P L O A D E R*\n\n`
-    txt += `  ▸ *Tipo*: ${fileType.mime}\n`
-    txt += `  ▸ *Tamaño*: ${formatBytes(media.length)}\n`
-    txt += `  ▸ *Enlace original*:\n${link}\n`
-    txt += `  ▸ *Enlace acortado*:\n${shortUrlText}\n\n`
-    txt += `⏳ El enlace ${fileType.mime.startsWith('image') ? 'no expira' : 'puede expirar'}\n`
-    txt += `🔗 *Subido por*: ${m.name || '@' + m.sender.split('@')[0]}`
-
+    // Enviar resultado
     await conn.sendFile(
       m.chat, 
-      imgBuffer, 
+      previewBuffer, 
       'preview.jpg', 
       txt, 
-      m,
-      null, 
-      { 
-        thumbnail: imgBuffer.slice(0, 64*1024), // Miniaturas pequeñas
-        quoted: m 
-      }
+      m
     )
-    
     await m.react('✅')
-    
-  } catch (e) {
-    console.error('Error en comando tourl:', e)
-    await m.reply(`❌ Error crítico: ${e.message}\nReporta este error al desarrollador.`)
-    await m.react('✖️')
+
+  } catch (error) {
+    console.error('Error en tourl:', error)
+    await m.reply(`❌ *Error al procesar*: ${error.message}`)
+    await m.react('❌')
   }
 }
 
-handler.help = ['tourl']
-handler.tags = ['tools']
-handler.command = /^(tourl|upload|telegraph)$/i
-handler.limit = true
-handler.register = true
-export default handler
+// Función alternativa para subir a Telegraph
+async function uploadToTelegraph(buffer, mimeType) {
+  try {
+    // Implementación básica (debes reemplazar con tu lógica real)
+    const isImage = mimeType.startsWith('image/')
+    const formData = new FormData()
+    formData.append('file', new Blob([buffer]), { type: mimeType })
+    
+    const res = await fetch(isImage ? 'https://telegra.ph/upload' : 'https://graph.org/upload', {
+      method: 'POST',
+      body: formData
+    })
+    
+    const json = await res.json()
+    if (json.error) throw new Error(json.error)
+    
+    return isImage 
+      ? `https://telegra.ph${json[0].src}` 
+      : `https://graph.org${json[0].src}`
+  } catch (e) {
+    console.error('Error en uploadToTelegraph:', e)
+    throw new Error('Error al subir el archivo')
+  }
+}
 
-// Función para formatear bytes
+// Helper functions
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -112,13 +111,17 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm) + ' ' + sizes[i]
 }
 
-// Función para acortar URLs
 async function shortUrl(url) {
   try {
     const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`)
-    if (!res.ok) throw new Error('API de acortamiento no disponible')
     return await res.text()
   } catch {
-    return url // Devuelve la URL original si falla el acortamiento
+    return url
   }
 }
+
+handler.help = ['tourl']
+handler.tags = ['tools']
+handler.command = /^(tourl|telegraph|upload)$/i
+handler.limit = true
+export default handler
