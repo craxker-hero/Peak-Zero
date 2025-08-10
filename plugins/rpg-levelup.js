@@ -3,7 +3,18 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn }) => {
     let user = global.db.data.users[m.sender]
-    let name = conn.getName(m.sender)
+    if (!user) {
+        global.db.data.users[m.sender] = {
+            name: conn.getName(m.sender),
+            exp: 0,
+            level: 0,
+            lastActive: +new Date()
+        }
+        user = global.db.data.users[m.sender]
+    }
+
+    // Imagen de fondo para el level up
+    let img = await (await fetch('https://telegra.ph/file/b97148e2154508f63d909.jpg')).buffer()
     
     // Verificar si puede subir de nivel
     if (!canLevelUp(user.level, user.exp, global.multiplier)) {
@@ -12,8 +23,9 @@ let handler = async (m, { conn }) => {
         let progress = Math.floor((currentXP / xp) * 100)
         
         let txt = `*「✿」Sistema de Niveles*\n\n`
-        txt += `▸ *Usuario*: ${name}\n`
+        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
         txt += `▸ *Nivel actual*: ${user.level}\n`
+        txt += `▸ *Experiencia (XP)*: ${user.exp}\n`
         txt += `▸ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
         txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!`
         
@@ -26,8 +38,8 @@ let handler = async (m, { conn }) => {
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
     if (before !== user.level) {
-        let txt = `*「 ✧ ¡Level Up!」*\n\n`
-        txt += `▸ *Usuario*: ${name}\n`
+        let txt = `*「🎉 ¡Level Up!」*\n\n`
+        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
         txt += `▸ *Nivel anterior*: ${before}\n`
         txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
         txt += `¡Sigue interactuando para subir más de nivel!`
@@ -38,7 +50,7 @@ let handler = async (m, { conn }) => {
 
 // Sistema de experiencia automático
 handler.before = async function (m) {
-    if (m.isCommand) {
+    if (m.isCommand && !m.isGroup) {
         let user = global.db.data.users[m.sender] = global.db.data.users[m.sender] || {}
         
         // XP por comando (5-15 puntos aleatorios)
@@ -53,5 +65,5 @@ handler.before = async function (m) {
 
 handler.help = ['level', 'nivel']
 handler.tags = ['rpg']
-handler.command = /^(nivel|lvl|level|levelup)$/i
+handler.command = /^(nivel|lvl|level|levelup|niveles)$/i
 export default handler
