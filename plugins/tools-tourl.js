@@ -44,10 +44,10 @@ const handler = async (m) => {
     const fileSize = formatBytes(media.length);
     
     // Formateo del mensaje con el estilo solicitado
-    const txt = `✦「 ¡File uploaded! 」\n\n` +
-                `❏  » ${fileUrl}\n` +
-                `❀  » ${fileSize}\n` +
-                `↺  » ${user}`;
+    const txt = `> *_✦「 ¡File uploaded! 」_*\n\n` +
+                `_❏  » *${fileUrl}*_\n` +
+                `_❀  » ${fileSize}_\n` +
+                `_↺  » ${user}_`;
 
     await m.reply(txt);
     await m.react('✅');
