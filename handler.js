@@ -44,6 +44,7 @@ export async function handler(chatUpdate) {
             if (typeof user !== 'object') global.db.data.users[m.sender] = {}
 
             if (user) {
+                // Ensure all required fields exist
                 if (!isNumber(user.exp)) user.exp = 0
                 if (!isNumber(user.limit)) user.limit = 10
                 if (!('premium' in user)) user.premium = false
@@ -83,6 +84,7 @@ export async function handler(chatUpdate) {
                 }
             }
 
+            // Initialize chat data
             let chat = global.db.data.chats[m.chat]
             if (typeof chat !== 'object') global.db.data.chats[m.chat] = {}
 
@@ -104,6 +106,7 @@ export async function handler(chatUpdate) {
                 }
             }
 
+            // Initialize settings
             var settings = global.db.data.settings[this.user.jid]
             if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
             if (settings) {
@@ -143,17 +146,9 @@ export async function handler(chatUpdate) {
         }
 
         if (m.isBaileys) return
+
+        // Add base XP
         m.exp += Math.ceil(Math.random() * 10)
-
-        // ===== [NEW PREFIX HANDLING] =====
-        const prefixUsed = isOwner 
-            ? ['/', '$', '=>', '>'].find(p => m.text.startsWith(p))
-            : m.text.startsWith('/') ? '/' : null;
-
-        if (!prefixUsed) return;
-        const noPrefix = m.text.slice(prefixUsed.length).trim();
-        const [cmd, ...args] = noPrefix.split(' ');
-        // ===== [END NEW PREFIX HANDLING] =====
 
         let usedPrefix
         const groupMetadata = (m.isGroup ? ((conn.chats[m.chat] || {}).metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}) || {}
@@ -166,34 +161,44 @@ export async function handler(chatUpdate) {
 
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
 
-        // Handle custom commands
-        if (cmd && customCommandHandlers[cmd]) {
-            try {
-                await customCommandHandlers[cmd].call(this, m, {
-                    usedPrefix: prefixUsed,
-                    noPrefix,
-                    args,
-                    command: cmd,
-                    conn: this,
-                    participants,
-                    groupMetadata,
-                    user,
-                    bot,
-                    isROwner,
-                    isOwner,
-                    isRAdmin,
-                    isAdmin,
-                    isBotAdmin,
-                    isPrems,
-                    chatUpdate,
-                    __dirname: ___dirname,
-                    __filename: join(___dirname, 'custom-'+cmd)
-                })
-                return
-            } catch (e) {
-                console.error('Error in custom command:', e)
-                m.reply('Ocurrió un error al ejecutar el comando')
-                return
+        // Check custom commands first
+        const prefixRegex = new RegExp(`^[${(opts['prefix'] || '‎z/#$%.\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&')}]`)
+        const prefixMatch = m.text.match(prefixRegex)
+
+        if (prefixMatch) {
+            const usedPrefix = prefixMatch[0]
+            const noPrefix = m.text.replace(usedPrefix, '').trim()
+            const [command, ...args] = noPrefix.split(' ')
+
+            // Handle custom commands
+            if (customCommandHandlers[command]) {
+                try {
+                    await customCommandHandlers[command].call(this, m, {
+                        usedPrefix,
+                        noPrefix,
+                        args,
+                        command,
+                        conn: this,
+                        participants,
+                        groupMetadata,
+                        user,
+                        bot,
+                        isROwner,
+                        isOwner,
+                        isRAdmin,
+                        isAdmin,
+                        isBotAdmin,
+                        isPrems,
+                        chatUpdate,
+                        __dirname: ___dirname,
+                        __filename: join(___dirname, 'custom-'+command)
+                    })
+                    return
+                } catch (e) {
+                    console.error('Error in custom command:', e)
+                    m.reply('Ocurrió un error al ejecutar el comando')
+                    return
+                }
             }
         }
 
@@ -220,18 +225,43 @@ export async function handler(chatUpdate) {
                 continue
             }
 
-            let match
+            const str2Regex = str => str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
             let _prefix = plugin.customPrefix ? plugin.customPrefix : conn.prefix ? conn.prefix : global.prefix
-            
-            // Modified prefix matching
-            if (Array.isArray(_prefix)) {
-                match = _prefix.find(p => m.text.startsWith(p))
-            } else if (typeof _prefix === 'string') {
-                match = m.text.startsWith(_prefix) ? _prefix : null
+            let match = (_prefix instanceof RegExp ? 
+                [[_prefix.exec(m.text), _prefix]] :
+                Array.isArray(_prefix) ?
+                    _prefix.map(p => {
+                        let re = p instanceof RegExp ? p : new RegExp(str2Regex(p))
+                        return [re.exec(m.text), re]
+                    }) :
+                    typeof _prefix === 'string' ?
+                        [[new RegExp(str2Regex(_prefix)).exec(m.text), new RegExp(str2Regex(_prefix))]] :
+                        [[[], new RegExp]]
+            ).find(p => p[1])
+
+            if (typeof plugin.before === 'function') {
+                if (await plugin.before.call(this, m, {
+                    match,
+                    conn: this,
+                    participants,
+                    groupMetadata,
+                    user,
+                    bot,
+                    isROwner,
+                    isOwner,
+                    isRAdmin,
+                    isAdmin,
+                    isBotAdmin,
+                    isPrems,
+                    chatUpdate,
+                    __dirname: ___dirname,
+                    __filename
+                })) continue
             }
 
-            if (match) {
-                usedPrefix = match
+            if (typeof plugin !== 'function') continue
+
+            if ((usedPrefix = (match[0] || '')[0])) {
                 let noPrefix = m.text.replace(usedPrefix, '')
                 let [command, ...args] = noPrefix.trim().split` `.filter(v => v)
                 args = args || []
@@ -299,6 +329,11 @@ export async function handler(chatUpdate) {
                     continue
                 }
 
+                // if (plugin.register == true && _user.registered == false) { 
+//     fail('unreg', m, this)
+//     continue
+// }
+
                 m.isCommand = true
                 let xp = 'exp' in plugin ? parseInt(plugin.exp) : 17 
                 if (xp > 200) m.reply('chirrido -_-')
@@ -310,7 +345,7 @@ export async function handler(chatUpdate) {
                 }
 
                 let extra = {
-                    match: [usedPrefix],
+                    match,
                     usedPrefix,
                     noPrefix,
                     _args,
@@ -359,12 +394,19 @@ export async function handler(chatUpdate) {
             }
         }
 
+        // Handle unknown commands
         if (usedPrefix && !m.plugin) {
-            conn.reply(m.chat, 
-                `「✧」» El comando *${noPrefix.split(' ')[0] || prefixUsed}* no existe.\n\n` +
-                `Para ver la lista de comandos usa:\n» *${prefixUsed}help*`, 
-                m
-            )
+            const prefixRegex = new RegExp(`^[${(opts['prefix'] || '‎z/#$%.\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&')}]`)
+            const prefixMatch = m.text.match(prefixRegex)
+            if (prefixMatch) {
+                const usedPrefix = prefixMatch[0]
+                const noPrefix = m.text.replace(usedPrefix, '').trim().split(' ')[0]
+                conn.reply(m.chat, 
+                    `「✧」» El comando *${noPrefix || usedPrefix}* no existe.\n\n` +
+                    `Para ver la lista de comandos usa:\n» *${usedPrefix}help*`, 
+                    m
+                )
+            }
         }
 
     } catch (e) {
@@ -375,18 +417,22 @@ export async function handler(chatUpdate) {
             if (quequeIndex !== -1) this.msgqueque.splice(quequeIndex, 1)
         }
 
+        // Update user stats
         let user, stats = global.db.data.stats
         if (m) {
             if (m.sender && (user = global.db.data.users[m.sender])) {
                 user.exp += m.exp
                 user.limit -= m.limit * 1
 
+                // Count commands
                 if (m.isCommand) {
                     user.commandCount = (user.commandCount || 0) + 1
                     user.lastActive = +new Date()
                 }
             }
 
+            // Update plugin stats
+            let stat
             if (m.plugin) {
                 let now = +new Date
                 if (m.plugin in stats) {
