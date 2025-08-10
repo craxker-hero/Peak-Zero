@@ -12,8 +12,6 @@ let handler = async (m, { conn, usedPrefix }) => {
         }
         user = global.db.data.users[m.sender]
     }
-
-    let img = await (await fetch('https://telegra.ph/file/b97148e2154508f63d909.jpg')).buffer()
     
     if (!canLevelUp(user.level, user.exp, global.multiplier)) {
         let { min, xp, max } = xpRange(user.level, global.multiplier)
@@ -36,10 +34,10 @@ let handler = async (m, { conn, usedPrefix }) => {
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
     if (before !== user.level) {
-        let txt = `*「🎉 ¡Level Up!」*\n\n`
-        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
-        txt += `▸ *Nivel anterior*: ${before}\n`
-        txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
+        let txt = `*「　✦ ¡Level Up!」*\n\n`
+        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
+        txt += `✧ *Nivel anterior*: ${before}\n`
+        txt += `✰ *Nuevo nivel*: ${user.level}\n\n`
         txt += `¡Felicidades! Sigue interactuando para subir más`
         
         await conn.sendFile(m.chat, img, 'levelup.jpg', txt, m)
