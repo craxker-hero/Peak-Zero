@@ -1,6 +1,6 @@
 import uploadFile from '../lib/uploadFile.js'
 import uploadImage from '../lib/uploadImage.js'
-const fetch = require('node-fetch');'
+const fetch = require('node-fetch');
 
 let handler = async (m) => {
   let q = m.quoted ? m.quoted : m
