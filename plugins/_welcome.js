@@ -11,7 +11,7 @@ export async function before(m, {conn, participants, groupMetadata}) {
     let bienvenida = `*Bienvenido* a ${groupMetadata.subject}!
 	✰ @${m.messageStubParameters[0].split`@`[0]}
 
-bienvenido ${groupMetadata.subject} que disfrute su estadía
+Bienvenido a ${groupMetadata.subject}, que disfrute su estadía
 
 > 🜸 Puedes usar */help* para ver la lista de comandos.`
 
@@ -19,22 +19,30 @@ bienvenido ${groupMetadata.subject} que disfrute su estadía
   }
 
   if (chat.bienvenida && m.messageStubType == 28) {
-    let bye = `*Bienvenido* a ${groupMetadata.subject}!
+    let bye = `*Hasta luego* de ${groupMetadata.subject}!
 	✰ @${m.messageStubParameters[0].split`@`[0]}
 
-bienvenido ${groupMetadata.subject} que disfrute su estadía
+Espero que vuelvas pronto a ${groupMetadata.subject}
 
 > 🜸 Puedes usar */help* para ver la lista de comandos.`
+
     await conn.sendAi(m.chat, botname, textbot, bye, img, img, canal, estilo)
   }
 
   if (chat.bienvenida && m.messageStubType == 32) {
-    let kick = `*Bienvenido* a ${groupMetadata.subject}!
+    // Obtener el admin que realizó la eliminación
+    const admin = m.participants.find(p => p.admin && p.id !== m.messageStubParameters[0])
+    const adminUsername = admin ? '@' + admin.id.split('@')[0] : '@admin'
+    
+    let kick = `*Hasta luego* de ${groupMetadata.subject}!
 	✰ @${m.messageStubParameters[0].split`@`[0]}
+        
+         ✰ Eliminado por ${adminUsername}
 
-bienvenido ${groupMetadata.subject} que disfrute su estadía
+Espero que vuelvas pronto a ${groupMetadata.subject}
 
 > 🜸 Puedes usar */help* para ver la lista de comandos.`
+
     await conn.sendAi(m.chat, botname, textbot, kick, img, img, canal, estilo)
   }
 }
