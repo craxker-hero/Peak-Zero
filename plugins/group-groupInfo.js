@@ -1,7 +1,7 @@
 //
 
 let handler = async (m, { conn, participants, groupMetadata }) => {
-    const { welcome, antiLink, delete: del, detect } = global.db.data.chats[m.chat]
+    const chat = global.db.data.chats[m.chat]
     const owner = groupMetadata.owner || participants.find(p => p.admin === 'superadmin')?.id || m.chat.split`-`[0] + '@s.whatsapp.net'
     const botStatus = participants.find(p => p.id === conn.user.jid) ? '✓' : '✗'
     
@@ -11,9 +11,9 @@ let handler = async (m, { conn, participants, groupMetadata }) => {
 ✿» ${participants.length} participantes
 
 ✰» Bot ${conn.user.name} ${botStatus}
-✰» Anti-links ${antiLink ? '✓' : '✗'}
-✰» Bienvenida ${welcome ? '✓' : '✗'}
-✰» Alertas ${detect ? '✓' : '✗'}
+✰» Anti-links ${chat.antiLink ? '✓' : '✗'}
+✰» Bienvenida ${chat.welcome ? '✓' : '✗'}
+✰» Alertas ${chat.detect ? '✓' : '✗'}
 `.trim()
 
     await conn.reply(m.chat, text, m, {
