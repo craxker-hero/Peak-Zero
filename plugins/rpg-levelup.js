@@ -25,7 +25,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         txt += `▸ *Nivel actual*: ${user.level}\n`
         txt += `▸ *Experiencia*: ${user.exp} XP\n`
         txt += `▸ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
-        txt += `Necesitas *${max - user.exp} XP* más para subir de nivel\n\n`
+        txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!\n\n`
         txt += `Usa *${usedPrefix}help* para ver comandos disponibles`
         
         await conn.sendFile(m.chat, img, 'level.jpg', txt, m)
@@ -46,33 +46,8 @@ let handler = async (m, { conn, usedPrefix }) => {
     }
 }
 
-// Sistema de experiencia automático
-handler.before = async function (m) {
-    if (m.isCommand && !m.isGroup) {
-        let user = global.db.data.users[m.sender] = global.db.data.users[m.sender] || {}
-        
-        // XP por comando (5-15 puntos aleatorios)
-        let xpEarned = Math.floor(Math.random() * 11) + 5
-        user.exp = (user.exp || 0) + xpEarned
-        
-        // Actualizar última actividad
-        user.lastActive = +new Date()
-        
-        // Subir de nivel automáticamente si es posible
-        while (canLevelUp(user.level, user.exp, global.multiplier || 1)) {
-            user.level++
-            let txt = `*「🎉 ¡Level Up!」*\n\n`
-            txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
-            txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
-            txt += `¡Logrado automáticamente!`
-            
-            await conn.sendMessage(m.chat, { text: txt }, { quoted: m })
-        }
-    }
-    return true
-}
-
-handler.help = ['level', 'nivel']
-handler.tags = ['rpg']
+handler.help = ['level [info]', 'nivel [info]']
+handler.tags = ['xp']
 handler.command = /^(nivel|lvl|level|levelup|niveles)$/i
+
 export default handler
