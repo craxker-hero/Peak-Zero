@@ -18,12 +18,11 @@ let handler = async (m, { conn, usedPrefix }) => {
         let progress = Math.floor((currentXP / xp) * 100)
         
         let txt = `*「✿」Sistema de Niveles*\n\n`
-        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
-        txt += `▸ *Nivel actual*: ${user.level}\n`
-        txt += `▸ *Experiencia*: ${user.exp} XP\n`
-        txt += `▸ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
+        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
+        txt += `✧ *Nivel actual*: ${user.level}\n`
+        txt += `❑ *Experiencia*: ${user.exp} XP\n`
+        txt += `✩ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
         txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!\n\n`
-        txt += `Usa *${usedPrefix}help* para ver comandos disponibles`
         
         await conn.reply(m.chat, txt, m)
         return
@@ -33,10 +32,10 @@ let handler = async (m, { conn, usedPrefix }) => {
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
     if (before !== user.level) {
-        let txt = `*「🎉 ¡Level Up!」*\n\n`
-        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
-        txt += `▸ *Nivel anterior*: ${before}\n`
-        txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
+        let txt = `*「 ✰ ¡Level Up!」*\n\n`
+        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
+        txt += `✧ *Nivel anterior*: ${before}\n`
+        txt += `✿ *Nuevo nivel*: ${user.level}\n\n`
         txt += `¡Felicidades! Sigue interactuando para subir más`
         
         await conn.reply(m.chat, txt, m)
