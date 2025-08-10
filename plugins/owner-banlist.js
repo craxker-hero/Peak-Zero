@@ -12,12 +12,12 @@ let handler = async (m, { conn, isOwner }) => {
 
   let caption = `
 ❐　「 *Usuarios Baneados* 」
-✦» *Total* : ${users.length}
+✦ » *Total* : ${users.length}
 ${userList}
 
 
 ❐　「 *Chats Baneados* 」
-✦» *Total* : ${chats.length}
+✦ » *Total* : ${chats.length}
 ${chatList}
 
 `.trim()
