@@ -12,17 +12,17 @@ let handler = async (m, { conn, usedPrefix }) => {
         user = global.db.data.users[m.sender]
     }
     
-    if (!canLevelUp(user.level, user.exp, global.multiplier)) {
-        let { min, xp, max } = xpRange(user.level, global.multiplier)
-        let currentXP = user.exp - min
-        let progress = Math.floor((currentXP / xp) * 100)
-        
+    let { min, xp, max } = xpRange(user.level, global.multiplier)
+    let currentXP = user.exp - min
+    let progress = Math.floor((currentXP / xp) * 100)
+
+    if (!canLevelUp(user.level, user.exp, global.multiplier)) {        
         let txt = `*「✿」Sistema de Niveles*\n\n`
-        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
+        txt += `❀ *Usuario*: ${user.name || conn.getName(m.sender)}\n`
         txt += `✧ *Nivel actual*: ${user.level}\n`
         txt += `❑ *Experiencia*: ${user.exp} XP\n`
         txt += `✩ *Progreso*: ${currentXP}/${xp} (${progress}%)\n\n`
-        txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!\n\n`
+        txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!`
         
         await conn.reply(m.chat, txt, m)
         return
@@ -32,11 +32,10 @@ let handler = async (m, { conn, usedPrefix }) => {
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
     if (before !== user.level) {
-        let txt = `*「 ✰ ¡Level Up!」*\n\n`
-        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
-        txt += `✧ *Nivel anterior*: ${before}\n`
-        txt += `✿ *Nuevo nivel*: ${user.level}\n\n`
-        txt += `¡Felicidades! Sigue interactuando para subir más`
+        let txt = `*「　✰ ¡Level Up!」*\n\n`
+        txt += `✧ *Nuevo nivel*: ${user.level}\n`
+        txt += `✩ *Experiencia actual*: ${user.exp} XP\n`
+        txt += ` *Siguiente nivel en*: ${xpRange(user.level, global.multiplier).max - user.exp} XP`
         
         await conn.reply(m.chat, txt, m)
     }
