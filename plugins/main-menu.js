@@ -28,11 +28,11 @@ const defaultMenu = {
   before: `
 ─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─
 
-" Hola %name soy Ai Hoshino, %greeting "
+*Hola %name soy Ai Peak-Zero, %greeting*
 
 ╭── ︿︿︿︿︿ ⭒   ⭒   ⭒   ⭒   ⭒   ⭒
 ┊ ‹‹ Hello :: %name
-┊•⁀➷ °⭒⭒⭒ 【 ✯ Starlights Team ✰ 】
+┊•⁀➷ °⭒⭒⭒ 【 ✯ Peak-Zero.✰ 】
 ╰─── ︶︶︶︶ ✰⃕  ⌇ ⭒ ⭒ ⭒   ˚̩̥̩̥̩̩͙✩
 ┊🍬 [ Modo :: Público
 ┊📚 [ Baileys :: Multi Device
@@ -131,7 +131,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
       text: text.trim(),
       contextInfo: {
         externalAdReply: {
-          title: "Mila WaBot",
+          title: "Peak-Zero",
           body: "developed by craxker",
           thumbnailUrl: "https://o.uguu.se/RaBjBlyt.jpg", // Imagen grande
           sourceUrl: "",
