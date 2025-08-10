@@ -4,31 +4,45 @@ import fetch from 'node-fetch'
 let handler = async (m, { conn }) => {
   let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender
   
-  // Obtener nombre de TRES formas diferentes para mayor confiabilidad
-  let userName = await conn.getName(who).catch(_ => null) || 
-               (global.db.data.users[who]?.name) || 
-               m.pushName || 
-               'Usuario'
-
-  // Forzar actualización del nombre en la base de datos
-  if (!global.db.data.users[who]) {
-    global.db.data.users[who] = {
-      name: userName,
-      registered: false,
-      exp: 0,
-      level: 0
+  // Obtener nombre de forma segura
+  let userName = 'Usuario' // Valor por defecto
+  try {
+    // Primero intentamos con el nombre almacenado
+    userName = global.db.data.users[who]?.name 
+             || m.pushName 
+             || 'Usuario'
+    
+    // Luego intentamos actualizarlo desde WhatsApp
+    const contact = await conn.fetchStatus(who).catch(_ => null)
+    if (contact?.status) {
+      userName = contact.status
+      // Actualizamos en la base de datos
+      global.db.data.users[who] = global.db.data.users[who] || {}
+      global.db.data.users[who].name = userName
     }
-  } else if (global.db.data.users[who].name !== userName) {
-    global.db.data.users[who].name = userName
+  } catch (e) {
+    console.error('Error al obtener nombre:', e)
+  }
+
+  // Asegurar que el usuario existe en la base de datos
+  global.db.data.users[who] = global.db.data.users[who] || {
+    name: userName,
+    exp: 0,
+    level: 0,
+    commandCount: 0
   }
 
   let user = global.db.data.users[who]
   
-  // Obtener foto de perfil con múltiples fallbacks
-  let pp = await conn.profilePictureUrl(who, 'image')
-    .catch(_ => 'https://i.imgur.com/8Km9TLL.jpg') // Imagen por defecto
+  // Obtener foto de perfil con fallback
+  let pp
+  try {
+    pp = await conn.profilePictureUrl(who, 'image')
+  } catch {
+    pp = 'https://i.imgur.com/8Km9TLL.jpg' // Imagen por defecto
+  }
 
-  // Cálculos de nivel y progreso
+  // Cálculos de nivel
   let { min, xp } = xpRange(user.level, global.multiplier || 1)
   let currentXP = Math.max(0, user.exp - min)
   let neededXP = Math.max(1, xp)
@@ -44,7 +58,7 @@ let handler = async (m, { conn }) => {
   txt += `# Puesto » *#${Math.floor(Math.random() * 1000000).toLocaleString('es-ES')}*\n\n`
   txt += `✧ Comandos usados » *${(user.commandCount || 0).toLocaleString('es-ES')}*`
 
-  // Enviar mensaje con manejo de errores
+  // Enviar mensaje
   try {
     let img = await (await fetch(pp)).buffer()
     await conn.sendMessage(m.chat, { 
