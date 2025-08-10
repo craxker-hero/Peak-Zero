@@ -1,6 +1,5 @@
 import { fileTypeFromBuffer } from 'file-type';
 import fetch from 'node-fetch';
-import { Blob } from 'buffer';
 
 const handler = async (m) => {
   const q = m.quoted ? m.quoted : m;
@@ -15,12 +14,12 @@ const handler = async (m) => {
     
     if (!type) throw new Error('Formato no soportado');
     
-    // Subir a Telegraph
-    const telegraphUrl = await uploadToTelegraph(media, type.mime);
-    const shortUrl = await shortUrl(telegraphUrl);
+    // Subir a Catbox
+    const fileUrl = await uploadToCatbox(media);
+    const shortUrl = await shortUrl(fileUrl);
     
     const txt = `*Enlace generado:*\n\n` +
-                `🔗 Original: ${telegraphUrl}\n` +
+                `🔗 Original: ${fileUrl}\n` +
                 `🔗 Acortado: ${shortUrl}\n` +
                 `📦 Tamaño: ${formatBytes(media.length)}`;
     
@@ -34,27 +33,29 @@ const handler = async (m) => {
   }
 };
 
-async function uploadToTelegraph(buffer, mimeType) {
+async function uploadToCatbox(buffer) {
   const form = new FormData();
-  const blob = new Blob([buffer], { type: mimeType });
-  form.append('file', blob, 'file');
-  
-  const res = await fetch('https://telegra.ph/upload', {
+  form.append('reqtype', 'fileupload');
+  form.append('userhash', ''); // Opcional si no tienes cuenta
+  form.append('fileToUpload', new Blob([buffer]), 'file');
+
+  const res = await fetch('https://catbox.moe/user/api.php', {
     method: 'POST',
     body: form
   });
   
-  const data = await res.json();
-  if (!data[0]?.src) throw new Error('Error al subir a Telegraph');
-  return `https://telegra.ph${data[0].src}`;
+  const url = await res.text();
+  if (!url.startsWith('http')) throw new Error('Error al subir a Catbox');
+  return url;
 }
 
+// Funciones auxiliares (las mismas que antes)
 async function shortUrl(url) {
   try {
     const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
     return await res.text();
   } catch {
-    return url; // Si falla el acortador, devuelve la URL original
+    return url;
   }
 }
 
