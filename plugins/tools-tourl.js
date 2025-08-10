@@ -1,127 +1,121 @@
 import { fileTypeFromBuffer } from 'file-type'
 import fetch from 'node-fetch'
+import FormData from 'form-data'
 
 let handler = async (m, { conn, usedPrefix, command }) => {
-  // Verificar si hay mensaje citado o media adjunta
   let q = m.quoted ? m.quoted : m
   let mime = (q.msg || q).mimetype || ''
   
-  if (!mime) return m.reply(`❌ *Debes responder o enviar una imagen/vídeo*\nEjemplo: ${usedPrefix + command}`)
+  if (!mime) return m.reply(`Responda a una imagen/vídeo o envíe uno con el comando *${usedPrefix + command}*`)
   
-  await m.react('🕓')
+  await m.react('⏳')
 
   try {
-    // Descargar el archivo
     let media = await q.download()
-    if (!media || media.length === 0) throw new Error('Archivo vacío o no descargable')
-
-    // Detectar tipo de archivo
-    let fileType
-    try {
-      fileType = await fileTypeFromBuffer(media)
-      if (!fileType) throw new Error('Tipo de archivo no reconocido')
-    } catch (e) {
-      console.error(e)
-      throw new Error('Formato de archivo no compatible')
-    }
-
-    // Validar tipos permitidos
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'video/mp4'
-    ]
+    let fileType = await fileTypeFromBuffer(media)
     
-    if (!allowedTypes.includes(fileType.mime)) {
-      throw new Error(`Formato ${fileType.mime} no soportado. Solo imágenes (JPEG, PNG, WEBP, GIF) y MP4`)
-    }
+    if (!fileType) throw new Error('Formato no reconocido')
+    
+    // Límite de tamaño: 15MB para imágenes, 50MB para vídeos
+    const maxSize = fileType.mime.startsWith('video/') ? 50 * 1024 * 1024 : 15 * 1024 * 1024
+    if (media.length > maxSize) throw new Error(`Archivo demasiado grande (${formatBytes(media.length)}). Límite: ${formatBytes(maxSize)}`)
 
-    // Subir a Telegraph (versión alternativa)
-    let link = await uploadToTelegraph(media, fileType.mime)
-    if (!link) throw new Error('Error al subir a Telegraph')
+    // Intentar con múltiples APIs
+    let uploadResults = await Promise.any([
+      uploadToFreeAPI(media, fileType.mime).catch(e => null),
+      uploadToImgBB(media).catch(e => null),
+      uploadToFileIo(media, fileType.mime).catch(e => null)
+    ])
 
-    // Obtener vista previa
-    let previewBuffer
-    try {
-      const res = await fetch(link)
-      previewBuffer = await res.buffer()
-    } catch {
-      previewBuffer = media.slice(0, 30720) // Usar parte del archivo como preview
-    }
+    if (!uploadResults) throw new Error('Todas las APIs fallaron')
 
-    // Construir mensaje de respuesta
-    let txt = `*🖼 Telegraph Uploader*\n\n`
+    let { url, source } = uploadResults
+    let shortUrl = await tryShorten(url)
+    
+    let txt = `*📤 SUBIDA EXITOSA* (via ${source})\n\n`
     txt += `• *Tipo*: ${fileType.mime}\n`
     txt += `• *Tamaño*: ${formatBytes(media.length)}\n`
-    txt += `• *Enlace*: ${link}\n`
-    txt += `• *Acortado*: ${await shortUrl(link)}\n\n`
-    txt += `_El enlace ${fileType.mime.startsWith('image') ? 'no expira' : 'puede expirar después de 30 días'}_`
+    txt += `• *Enlace*: ${url}\n`
+    txt += `• *Acortado*: ${shortUrl}\n\n`
+    txt += `_${source === 'Telegraph' ? 'No expira' : 'Puede expirar después de 30 días'}_`
 
-    // Enviar resultado
-    await conn.sendFile(
-      m.chat, 
-      previewBuffer, 
-      'preview.jpg', 
-      txt, 
-      m
-    )
+    await conn.sendFile(m.chat, media, 'file', txt, m)
     await m.react('✅')
 
   } catch (error) {
-    console.error('Error en tourl:', error)
-    await m.reply(`❌ *Error al procesar*: ${error.message}`)
+    console.error(error)
+    await m.reply(`❌ Error: ${error.message}`)
     await m.react('❌')
   }
 }
 
-// Función alternativa para subir a Telegraph
-async function uploadToTelegraph(buffer, mimeType) {
-  try {
-    // Implementación básica (debes reemplazar con tu lógica real)
-    const isImage = mimeType.startsWith('image/')
-    const formData = new FormData()
-    formData.append('file', new Blob([buffer]), { type: mimeType })
-    
-    const res = await fetch(isImage ? 'https://telegra.ph/upload' : 'https://graph.org/upload', {
-      method: 'POST',
-      body: formData
-    })
-    
-    const json = await res.json()
-    if (json.error) throw new Error(json.error)
-    
-    return isImage 
-      ? `https://telegra.ph${json[0].src}` 
-      : `https://graph.org${json[0].src}`
-  } catch (e) {
-    console.error('Error en uploadToTelegraph:', e)
-    throw new Error('Error al subir el archivo')
-  }
+// ================== APIs ALTERNATIVAS ================== //
+
+// 1. Telegraph (para imágenes)
+async function uploadToFreeAPI(buffer, mimeType) {
+  let form = new FormData()
+  form.append('file', buffer, { filename: 'file.' + mimeType.split('/')[1] })
+  
+  let res = await fetch('https://telegra.ph/upload', {
+    method: 'POST',
+    body: form
+  })
+  
+  let json = await res.json()
+  if (!json[0]?.src) throw new Error('API Telegraph falló')
+  return { url: 'https://telegra.ph' + json[0].src, source: 'Telegraph' }
 }
 
-// Helper functions
-function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm) + ' ' + sizes[i]
+// 2. ImgBB (API Key pública, puede tener límites)
+async function uploadToImgBB(buffer) {
+  let form = new FormData()
+  form.append('image', buffer.toString('base64'))
+  
+  let res = await fetch('https://api.imgbb.com/1/upload?key=76d7a964a4b7b49a2cbb0d7a8f198271', { // Key pública
+    method: 'POST',
+    body: form
+  })
+  
+  let json = await res.json()
+  if (!json.data?.url) throw new Error('API ImgBB falló')
+  return { url: json.data.url, source: 'ImgBB' }
 }
 
-async function shortUrl(url) {
+// 3. File.io (para cualquier archivo)
+async function uploadToFileIo(buffer, mimeType) {
+  let form = new FormData()
+  form.append('file', buffer, { filename: 'file.' + mimeType.split('/')[1] })
+  
+  let res = await fetch('https://file.io', {
+    method: 'POST',
+    body: form
+  })
+  
+  let json = await res.json()
+  if (!json.link) throw new Error('API File.io falló')
+  return { url: json.link, source: 'File.io' }
+}
+
+// ================== FUNCIONES AUXILIARES ================== //
+
+async function tryShorten(url) {
   try {
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`)
+    let res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`)
     return await res.text()
   } catch {
     return url
   }
 }
 
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
+}
+
 handler.help = ['tourl']
 handler.tags = ['tools']
-handler.command = /^(tourl|telegraph|upload)$/i
-handler.limit = true
+handler.command = /^(tourl|upload|subir)$/i
 export default handler
