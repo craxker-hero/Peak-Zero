@@ -1,5 +1,4 @@
 import { canLevelUp, xpRange } from '../lib/levelling.js'
-import fetch from 'node-fetch'
 
 let handler = async (m, { conn, usedPrefix }) => {
     let user = global.db.data.users[m.sender]
@@ -26,7 +25,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         txt += `¡Necesitas *${max - user.exp} XP* más para subir de nivel!\n\n`
         txt += `Usa *${usedPrefix}help* para ver comandos disponibles`
         
-        await conn.sendFile(m.chat, img, 'level.jpg', txt, m)
+        await conn.reply(m.chat, txt, m)
         return
     }
     
@@ -34,13 +33,13 @@ let handler = async (m, { conn, usedPrefix }) => {
     while (canLevelUp(user.level, user.exp, global.multiplier)) user.level++
     
     if (before !== user.level) {
-        let txt = `*「　✦ ¡Level Up!」*\n\n`
-        txt += `❀ *Usuario*: ${conn.getName(m.sender)}\n`
-        txt += `✧ *Nivel anterior*: ${before}\n`
-        txt += `✰ *Nuevo nivel*: ${user.level}\n\n`
+        let txt = `*「🎉 ¡Level Up!」*\n\n`
+        txt += `▸ *Usuario*: ${conn.getName(m.sender)}\n`
+        txt += `▸ *Nivel anterior*: ${before}\n`
+        txt += `▸ *Nuevo nivel*: ${user.level}\n\n`
         txt += `¡Felicidades! Sigue interactuando para subir más`
         
-        await conn.sendFile(m.chat, img, 'levelup.jpg', txt, m)
+        await conn.reply(m.chat, txt, m)
     }
 }
 
