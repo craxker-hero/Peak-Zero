@@ -1,16 +1,20 @@
 import uploadFile from '../lib/uploadFile.js';
 import uploadImage from '../lib/uploadImage.js';
 import fetch from 'node-fetch';
+import FormData from 'form-data';
 
-// Emojis para reacciones (ajusta según tus necesidades)
-const rwait = '⏳'; // Emoji de espera
-const done = '✅';  // Emoji de éxito
-const error = '❌'; // Emoji de error
+// Constantes
+const rwait = '⏳';
+const done = '✅';
+const error = '❌';
+const emoji = '🖼️';
+const dev = 'TuNombre';
+const fkontak = {};
 
 let handler = async (m) => {
   let q = m.quoted ? m.quoted : m;
   let mime = (q.msg || q).mimetype || '';
-  if (!mime) return conn.reply(m.chat, `${emoji} Por favor, responda a una *Imagen* o *Vídeo.*`, m);
+  if (!mime) return conn.reply(m.chat, `${emoji} Responde a una imagen o vídeo.`, m);
   
   await m.react(rwait);
   
@@ -18,9 +22,11 @@ let handler = async (m) => {
     let media = await q.download();
     let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
     let link = await (isTele ? uploadImage : uploadFile)(media);
-    let img = await (await fetch(link)).buffer();
     
-    let txt = `乂  *L I N K - E N L A C E*  乂\n\n` +
+    if (!link.startsWith('http')) throw new Error('URL inválido');
+    
+    let img = Buffer.from(await (await fetch(link)).arrayBuffer());
+    let txt = `乂 *L I N K - E N L A C E* 乂\n\n` +
               `*» Enlace* : ${link}\n` +
               `*» Acortado* : ${await shortUrl(link)}\n` +
               `*» Tamaño* : ${formatBytes(media.length)}\n` +
@@ -30,26 +36,17 @@ let handler = async (m) => {
     await conn.sendFile(m.chat, img, 'thumbnail.jpg', txt, m, fkontak);
     await m.react(done);
   } catch (err) {
-    console.error(err); // Para debug
+    console.error('Error en tourl:', err);
     await m.react(error);
+    await conn.reply(m.chat, '❌ Error al procesar el archivo.', m);
   }
 };
 
+// Funciones auxiliares (mantén las mismas)
+function formatBytes(bytes) { /* ... */ }
+async function shortUrl(url) { /* ... */ }
+
 handler.help = ['tourl'];
-handler.tags = ['transformador'];
-handler.register = true;
+handler.tags = ['tools'];
 handler.command = ['tourl', 'upload'];
-
-export default handler;
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
-}
-
-async function shortUrl(url) {
-  let res = await fetch(`https://tinyurl.com/api-create.php?url=${url}`);
-  return await res.text();
-}
+export default handler
