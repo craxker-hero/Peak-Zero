@@ -2,7 +2,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import fetch from 'node-fetch';
 import { Blob } from 'buffer';
 
-// Funciones auxiliares primero para evitar errores de referencia
+// ================== FUNCIONES AUXILIARES ==================
 async function uploadToCatbox(buffer) {
   const form = new FormData();
   form.append('reqtype', 'fileupload');
@@ -18,15 +18,6 @@ async function uploadToCatbox(buffer) {
   return url;
 }
 
-async function shortUrl(url) {
-  try {
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
-    return await res.text();
-  } catch {
-    return url;
-  }
-}
-
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -34,39 +25,42 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
 }
 
-// Handler principal
+// ================== HANDLER PRINCIPAL ==================
 const handler = async (m) => {
+  const user = m.pushName || 'Usuario';
   const q = m.quoted ? m.quoted : m;
   const mime = (q.msg || q).mimetype || '';
   
-  if (!mime) return m.reply('[ ✰ ] Responde a una imagen o video.');
+  if (!mime) return m.reply('*✦  Por favor, responde a una imagen o video.*');
   await m.react('⏳');
 
   try {
     const media = await q.download();
     const type = await fileTypeFromBuffer(media);
     
-    if (!type) throw new Error('Formato no soportado');
+    if (!type) throw new Error('Formato de archivo no soportado');
     
     const fileUrl = await uploadToCatbox(media);
-    const shortenedUrl = await shortUrl(fileUrl);
+    const fileSize = formatBytes(media.length);
     
-    const txt = `*Enlace generado:*\n\n` +
-                `🔗 Original: ${fileUrl}\n` +
-                `🔗 Acortado: ${shortenedUrl}\n` +
-                `📦 Tamaño: ${formatBytes(media.length)}`;
-    
+    // Formateo del mensaje con el estilo solicitado
+    const txt = `✦「 ¡File uploaded! 」\n\n` +
+                `❏  » ${fileUrl}\n` +
+                `❀  » ${fileSize}\n` +
+                `↺  » ${user}`;
+
     await m.reply(txt);
     await m.react('✅');
     
   } catch (err) {
     console.error(err);
     await m.react('❌');
-    await m.reply('Error al procesar el archivo: ' + err.message);
+    await m.reply('*⚠︎  Error al procesar el archivo:*\n' + err.message);
   }
 };
 
+// ================== CONFIGURACIÓN ==================
 handler.help = ['tourl'];
 handler.tags = ['tools'];
-handler.command = ['tourl', 'upload'];
+handler.command = ['tourl', 'upload', 'subir'];
 export default handler;
