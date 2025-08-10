@@ -1,121 +1,108 @@
-import { fileTypeFromBuffer } from 'file-type'
+import uploadFile from '../lib/uploadFile.js'
+import uploadImage from '../lib/uploadImage.js'
 import fetch from 'node-fetch'
-import FormData from 'form-data'
+import { fileTypeFromBuffer } from 'file-type'
 
-let handler = async (m, { conn, usedPrefix, command }) => {
+let handler = async (m, { conn }) => {
   let q = m.quoted ? m.quoted : m
   let mime = (q.msg || q).mimetype || ''
+  if (!mime) return conn.reply(m.chat, '🍃 Responde a una *Imagen* o *Vídeo.*', m)
   
-  if (!mime) return m.reply(`Responda a una imagen/vídeo o envíe uno con el comando *${usedPrefix + command}*`)
-  
-  await m.react('⏳')
-
   try {
     let media = await q.download()
     let fileType = await fileTypeFromBuffer(media)
+    let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime)
     
-    if (!fileType) throw new Error('Formato no reconocido')
-    
-    // Límite de tamaño: 15MB para imágenes, 50MB para vídeos
-    const maxSize = fileType.mime.startsWith('video/') ? 50 * 1024 * 1024 : 15 * 1024 * 1024
-    if (media.length > maxSize) throw new Error(`Archivo demasiado grande (${formatBytes(media.length)}). Límite: ${formatBytes(maxSize)}`)
+    // Intentar subir con diferentes métodos
+    let link
+    try {
+      link = await (isTele ? uploadImage : uploadFile)(media)
+    } catch (e) {
+      console.error('Error con uploadImage/uploadFile:', e)
+      // Respaldar con otras APIs si falla
+      link = await uploadToBackupAPI(media, fileType.mime)
+    }
 
-    // Intentar con múltiples APIs
-    let uploadResults = await Promise.any([
-      uploadToFreeAPI(media, fileType.mime).catch(e => null),
-      uploadToImgBB(media).catch(e => null),
-      uploadToFileIo(media, fileType.mime).catch(e => null)
-    ])
+    // Obtener vista previa si es imagen
+    let imgBuffer
+    try {
+      imgBuffer = await (await fetch(link)).buffer()
+    } catch {
+      imgBuffer = media.slice(0, 30720) // Tomar parte del archivo como preview
+    }
 
-    if (!uploadResults) throw new Error('Todas las APIs fallaron')
+    // Formatear mensaje como solicitado
+    let txt = `> _✦「 ¡File uploaded! 」_\n`
+    txt += `❏　» ${link}\n`
+    txt += `❀　» ${formatBytes(media.length)}\n`
+    txt += `↺　» ${isTele ? 'No expira' : 'Desconocido'}\n\n`
+    txt += `_Subido por: @${m.sender.split('@')[0]}_`
 
-    let { url, source } = uploadResults
-    let shortUrl = await tryShorten(url)
-    
-    let txt = `*📤 SUBIDA EXITOSA* (via ${source})\n\n`
-    txt += `• *Tipo*: ${fileType.mime}\n`
-    txt += `• *Tamaño*: ${formatBytes(media.length)}\n`
-    txt += `• *Enlace*: ${url}\n`
-    txt += `• *Acortado*: ${shortUrl}\n\n`
-    txt += `_${source === 'Telegraph' ? 'No expira' : 'Puede expirar después de 30 días'}_`
+    // Enviar mensaje con vista previa
+    await conn.sendMessage(m.chat, {
+      image: imgBuffer,
+      caption: txt,
+      mentions: [m.sender]
+    }, { quoted: m })
 
-    await conn.sendFile(m.chat, media, 'file', txt, m)
-    await m.react('✅')
-
-  } catch (error) {
-    console.error(error)
-    await m.reply(`❌ Error: ${error.message}`)
-    await m.react('❌')
+  } catch (e) {
+    console.error('Error en tourl:', e)
+    await conn.reply(m.chat, `⚠︎ *Error:* ${e.message}`, m)
   }
 }
 
-// ================== APIs ALTERNATIVAS ================== //
+// Función de respaldo con múltiples APIs
+async function uploadToBackupAPI(buffer, mimeType) {
+  const apis = [
+    {
+      name: 'Telegraph',
+      url: 'https://telegra.ph/upload',
+      processor: res => `https://telegra.ph${res[0].src}`,
+      form: (form) => form.append('file', buffer)
+    },
+    {
+      name: 'ImgBB',
+      url: 'https://api.imgbb.com/1/upload?key=76d7a964a4b7b49a2cbb0d7a8f198271',
+      processor: res => res.data.url,
+      form: (form) => form.append('image', buffer.toString('base64'))
+    },
+    {
+      name: 'File.io',
+      url: 'https://file.io',
+      processor: res => res.link,
+      form: (form) => form.append('file', buffer)
+    }
+  ]
 
-// 1. Telegraph (para imágenes)
-async function uploadToFreeAPI(buffer, mimeType) {
-  let form = new FormData()
-  form.append('file', buffer, { filename: 'file.' + mimeType.split('/')[1] })
-  
-  let res = await fetch('https://telegra.ph/upload', {
-    method: 'POST',
-    body: form
-  })
-  
-  let json = await res.json()
-  if (!json[0]?.src) throw new Error('API Telegraph falló')
-  return { url: 'https://telegra.ph' + json[0].src, source: 'Telegraph' }
-}
-
-// 2. ImgBB (API Key pública, puede tener límites)
-async function uploadToImgBB(buffer) {
-  let form = new FormData()
-  form.append('image', buffer.toString('base64'))
-  
-  let res = await fetch('https://api.imgbb.com/1/upload?key=76d7a964a4b7b49a2cbb0d7a8f198271', { // Key pública
-    method: 'POST',
-    body: form
-  })
-  
-  let json = await res.json()
-  if (!json.data?.url) throw new Error('API ImgBB falló')
-  return { url: json.data.url, source: 'ImgBB' }
-}
-
-// 3. File.io (para cualquier archivo)
-async function uploadToFileIo(buffer, mimeType) {
-  let form = new FormData()
-  form.append('file', buffer, { filename: 'file.' + mimeType.split('/')[1] })
-  
-  let res = await fetch('https://file.io', {
-    method: 'POST',
-    body: form
-  })
-  
-  let json = await res.json()
-  if (!json.link) throw new Error('API File.io falló')
-  return { url: json.link, source: 'File.io' }
-}
-
-// ================== FUNCIONES AUXILIARES ================== //
-
-async function tryShorten(url) {
-  try {
-    let res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`)
-    return await res.text()
-  } catch {
-    return url
+  for (let api of apis) {
+    try {
+      let form = new FormData()
+      api.form(form)
+      
+      let res = await fetch(api.url, {
+        method: 'POST',
+        body: form
+      })
+      let json = await res.json()
+      
+      if (json.error) continue
+      return api.processor(json)
+    } catch (e) {
+      console.error(`Error con API ${api.name}:`, e)
+      continue
+    }
   }
+  throw new Error('Todas las APIs de respaldo fallaron')
 }
 
-function formatBytes(bytes, decimals = 2) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i]
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B'
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`
 }
 
 handler.help = ['tourl']
 handler.tags = ['tools']
-handler.command = /^(tourl|upload|subir)$/i
+handler.command = ['tourl', 'quax']
 export default handler
