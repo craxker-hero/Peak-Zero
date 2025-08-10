@@ -1,52 +1,53 @@
-import uploadFile from '../lib/uploadFile.js';
-import uploadImage from '../lib/uploadImage.js';
+import { fileTypeFromBuffer } from 'file-type';
 import fetch from 'node-fetch';
-import FormData from 'form-data';
 
-// Constantes
-const rwait = '⏳';
-const done = '✅';
-const error = '❌';
-const emoji = '🖼️';
-const dev = 'TuNombre';
-const fkontak = {};
+const handler = async (m) => {
+  const q = m.quoted ? m.quoted : m;
+  const mime = (q.msg || q).mimetype || '';
+  
+  if (!mime) return m.reply('Responde a una imagen o vídeo.');
+  await m.react('⏳');
 
-let handler = async (m) => {
-  let q = m.quoted ? m.quoted : m;
-  let mime = (q.msg || q).mimetype || '';
-  if (!mime) return conn.reply(m.chat, `${emoji} Responde a una imagen o vídeo.`, m);
-  
-  await m.react(rwait);
-  
   try {
-    let media = await q.download();
-    let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
-    let link = await (isTele ? uploadImage : uploadFile)(media);
+    const media = await q.download();
+    const type = await fileTypeFromBuffer(media);
     
-    if (!link.startsWith('http')) throw new Error('URL inválido');
+    if (!type) throw new Error('Formato no soportado');
     
-    let img = Buffer.from(await (await fetch(link)).arrayBuffer());
-    let txt = `乂 *L I N K - E N L A C E* 乂\n\n` +
-              `*» Enlace* : ${link}\n` +
-              `*» Acortado* : ${await shortUrl(link)}\n` +
-              `*» Tamaño* : ${formatBytes(media.length)}\n` +
-              `*» Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n` +
-              `> *${dev}*`;
-
-    await conn.sendFile(m.chat, img, 'thumbnail.jpg', txt, m, fkontak);
-    await m.react(done);
+    // Subir a Telegraph
+    const telegraphUrl = await uploadToTelegraph(media, type.ext);
+    const shortUrl = await shortUrl(telegraphUrl);
+    
+    const txt = `*Enlace generado:*\n\n` +
+                `🔗 Original: ${telegraphUrl}\n` +
+                `🔗 Acortado: ${shortUrl}\n` +
+                `📦 Tamaño: ${formatBytes(media.length)}`;
+    
+    await m.reply(txt);
+    await m.react('✅');
+    
   } catch (err) {
-    console.error('Error en tourl:', err);
-    await m.react(error);
-    await conn.reply(m.chat, '❌ Error al procesar el archivo.', m);
+    console.error(err);
+    await m.react('❌');
+    await m.reply('Error al procesar el archivo.');
   }
 };
 
-// Funciones auxiliares (mantén las mismas)
-function formatBytes(bytes) { /* ... */ }
-async function shortUrl(url) { /* ... */ }
+async function uploadToTelegraph(buffer, ext) {
+  const form = new FormData();
+  form.append('file', buffer, { filename: `file.${ext}` });
+  
+  const res = await fetch('https://telegra.ph/upload', {
+    method: 'POST',
+    body: form
+  });
+  
+  const data = await res.json();
+  if (!data[0]?.src) throw new Error('Error al subir');
+  return `https://telegra.ph${data[0].src}`;
+}
 
-handler.help = ['tourl'];
-handler.tags = ['tools'];
+// Mantén tus funciones shortUrl y formatBytes existentes
+
 handler.command = ['tourl', 'upload'];
-export default handler
+export default handler;
