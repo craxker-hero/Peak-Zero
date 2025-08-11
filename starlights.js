@@ -1,47 +1,54 @@
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 import './settings.js'
-import {createRequire} from 'module'
-import path, {join} from 'path'
-import {fileURLToPath, pathToFileURL} from 'url'
-import {platform} from 'process'
+import { createRequire } from 'module'
+import path, { join } from 'path'
+import { fileURLToPath, pathToFileURL } from 'url'
+import { platform } from 'process'
 import * as ws from 'ws'
-import {readdirSync, statSync, unlinkSync, existsSync, readFileSync, rmSync, watch} from 'fs'
+import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, rmSync, watch } from 'fs'
 import yargs from 'yargs'
-import {spawn} from 'child_process'
+import { spawn } from 'child_process'
 import lodash from 'lodash'
 import chalk from 'chalk'
 import syntaxerror from 'syntax-error'
-import {tmpdir} from 'os'
-import {format} from 'util'
+import { tmpdir } from 'os'
+import { format } from 'util'
 import P from 'pino'
 import pino from 'pino'
-import Pino from 'pino'
-import {Boom} from '@hapi/boom'
-import {makeWASocket, protoType, serialize} from './lib/simple.js'
-import {Low, JSONFile} from 'lowdb'
+import { Boom } from '@hapi/boom'
+import { makeWASocket, protoType, serialize } from './lib/simple.js'
+import { Low, JSONFile } from 'lowdb'
 import store from './lib/store.js'
-const {proto} = (await import('@whiskeysockets/baileys')).default
-const { DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, Browsers, makeCacheableSignalKeyStore, jidNormalizedUser, PHONENUMBER_MCC } = await import('@whiskeysockets/baileys')
+const { proto } = (await import('@whiskeysockets/baileys')).default
+const { DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, Browsers, makeCacheableSignalKeyStore, jidNormalizedUser } = await import('@whiskeysockets/baileys')
 import readline from 'readline'
 import NodeCache from 'node-cache'
-const {CONNECTING} = ws
-const {chain} = lodash
+
+// Importar SignalStore
+import { signalStore } from './lib/signalStore.js'
+
+const { CONNECTING } = ws
+const { chain } = lodash
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
 
 protoType()
 serialize()
 
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
-  return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString();
-}; global.__dirname = function dirname(pathURL) {
+  return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString()
+}
+
+global.__dirname = function dirname(pathURL) {
   return path.dirname(global.__filename(pathURL, true))
-}; global.__require = function require(dir = import.meta.url) {
+}
+
+global.__require = function require(dir = import.meta.url) {
   return createRequire(dir)
 }
 
-global.API = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({...query, ...(apikeyqueryname ? {[apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name]} : {})})) : '');
+global.API = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({ ...query, ...(apikeyqueryname ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {}) })) : '')
 
-global.timestamp = {start: new Date}
+global.timestamp = { start: new Date }
 
 const __dirname = global.__dirname(import.meta.url)
 
@@ -50,7 +57,7 @@ global.prefix = new RegExp('^[/]')
 
 global.db = new Low(new JSONFile(`storage/databases/database.json`))
 
-global.DATABASE = global.db 
+global.DATABASE = global.db
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ) return new Promise((resolve) => setInterval(async function () {
     if (!global.db.READ) {
@@ -73,46 +80,47 @@ global.loadDatabase = async function loadDatabase() {
   }
   global.db.chain = chain(global.db.data)
 }
-loadDatabase()
+
+await loadDatabase()
 
 global.authFile = `sessions`
 
-  const {state, saveState, saveCreds} = await useMultiFileAuthState(`${global.authFile}`)
-    const msgRetryCounterCache = new NodeCache()
-    const {version} = await fetchLatestBaileysVersion()
-    const useMobile = false
+const { state, saveCreds } = await useMultiFileAuthState(global.authFile)
+const msgRetryCounterCache = new NodeCache()
+const { version } = await fetchLatestBaileysVersion()
+const useMobile = false
 
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-    const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
 
-    const connectionOptions = {
-        version,
-        logger: pino({ level: "fatal" }).child({ level: "fatal" }),
-        printQRInTerminal: false,
-        mobile: useMobile, 
-        browser: ['Mac OS', 'chrome', '121.0.6167.159'], 
-        auth: {
-         creds: state.creds,
-         keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-      },
-	    generateHighQualityLinkPreview: true,
-      getMessage: async (key) => {
-         let jid = jidNormalizedUser(key.remoteJid)
-         let msg = await store.loadMessage(jid, key.id)
-
-         return msg?.message || ""
-      },
-      msgRetryCounterCache, 
-      defaultQueryTimeoutMs: undefined,
-
-    }
+const connectionOptions = {
+  version,
+  logger: pino({ level: "fatal" }).child({ level: "fatal" }),
+  printQRInTerminal: false,
+  mobile: useMobile,
+  browser: ['Mac OS', 'chrome', '121.0.6167.159'],
+  auth: {
+    creds: state.creds,
+    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+    signalStore, // Usar el SignalStore personalizado
+  },
+  generateHighQualityLinkPreview: true,
+  getMessage: async (key) => {
+    let jid = jidNormalizedUser(key.remoteJid)
+    let msg = await store.loadMessage(jid, key.id)
+    return msg?.message || ""
+  },
+  msgRetryCounterCache,
+  defaultQueryTimeoutMs: undefined,
+}
 
 global.conn = makeWASocket(connectionOptions)
 
+// Verificación de registro
 if (!conn.authState.creds.registered) {
   let phoneNumber = await question(chalk.blue('Ingresa el número de WhatsApp en el cual estará la Bot\n'))
-
   phoneNumber = phoneNumber.replace(/\D/g, '')
+  
   if (phoneNumber.startsWith('52') && phoneNumber.length === 12) {
     phoneNumber = `521${phoneNumber.slice(2)}`
   } else if (phoneNumber.startsWith('52')) {
@@ -125,9 +133,23 @@ if (!conn.authState.creds.registered) {
     let code = await conn.requestPairingCode(phoneNumber)
     code = code?.match(/.{1,4}/g)?.join("-") || code
     console.log(chalk.cyan('Su código es:', code))
-  } else {
   }
 }
+
+conn.isInit = false
+conn.well = false
+
+// Manejo de conexión
+conn.ev.on('connection.update', async (update) => {
+  if (update.connection === 'open') {
+    try {
+      const hasSession = await signalStore.hasSession(conn.user.id)
+      console.log(chalk.green(`✓ Sesión Signal ${hasSession ? 'activa' : 'nueva creada'}`))
+    } catch (error) {
+      console.error(chalk.red('✗ Error verificando sesión Signal:', error))
+    }
+  }
+})
 
 conn.isInit = false
 conn.well = false
