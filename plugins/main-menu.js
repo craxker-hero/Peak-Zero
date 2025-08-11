@@ -133,7 +133,7 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
         externalAdReply: {
           title: "Peak-Zero",
           body: "developed by あ ┊ 𝐂𝐫𝐚𝐱𝐤𝐞𝐫",
-          thumbnailUrl: "https://files.catbox.moe/aoeq17", // Imagen grande
+          thumbnailUrl: "https://stellarwa.xyz/files/1754925339706.jpg", // Imagen grande
           sourceUrl: "",
           mediaType: 1,
           renderLargerThumbnail: true, // Hacer la miniatura más grande
