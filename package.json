@@ -9,8 +9,9 @@
     "plugins": "plugins"
   },
   "scripts": {
-    "start": "node --experimental-vm-modules index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "patch-package"
   },
   "keywords": [
     "termux-whatsapp-bot",
@@ -38,7 +39,7 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@bochilteam/scraper": "^4.2.4",
-    "@whiskeysockets/baileys": "npm:@itsukichan/baileys@latest",
+    "@whiskeysockets/baileys": "6.8.1",
     "@ibaraki-douji/pixivts": "^2.4.1",
     "@StarlightsTeam/Scraper": "github:StarlightsTeam/StarlightsTeam-Scraper",
     "awesome-phonenumber": "^3.4.0",
@@ -80,6 +81,9 @@
   "optionalDependencies": {
     "@vitalets/google-translate-api": "^9.2.0",
     "sharp": "^0.32.2"
+  },
+  "devDependencies": {
+    "patch-package": "^6.5.1"
   },
   "engines": {
     "node": ">=18.0.0"
