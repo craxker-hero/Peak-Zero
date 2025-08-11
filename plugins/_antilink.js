@@ -1,23 +1,37 @@
-const linkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
+const linkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
 
-export async function before(m, {conn, isAdmin, isBotAdmin }) {
-    if (m.isBaileys && m.fromMe)
-        return !0
-    if (!m.isGroup) return !1
-    let chat = global.db.data.chats[m.chat]
-    let bot = global.db.data.settings[this.user.jid] || {}
-    const isGroupLink = linkRegex.exec(m.text)
+export async function before(m, { conn, isAdmin, isBotAdmin }) {
+    if (m.isBaileys && m.fromMe) return true;
+    if (!m.isGroup) return false;
+    
+    const chat = global.db.data.chats[m.chat];
+    const bot = global.db.data.settings[this.user.jid] || {};
+    const isGroupLink = linkRegex.test(m.text);
 
+    // Verificar si el mensaje contiene un enlace de WhatsApp y si el antiLink está activado
     if (chat.antiLink && isGroupLink && !isAdmin) {
+        // Si el bot es admin, verifica si el enlace es del mismo grupo
         if (isBotAdmin) {
-            const linkThisGroup = `https://chat.whatsapp.com/${await this.groupInviteCode(m.chat)}`
-            if (m.text.includes(linkThisGroup)) return !0
+            const groupInviteCode = await this.groupInviteCode(m.chat).catch(() => null);
+            const linkThisGroup = `https://chat.whatsapp.com/${groupInviteCode}`;
+            if (m.text.includes(linkThisGroup)) return true; // Permitir enlace del propio grupo
         }
-        await conn.reply(m.chat, `🚩 No permitimos enlaces de otros grupos, lo siento *@${m.sender.split('@')[0]}* serás expulsado del grupo ${isBotAdmin ? '' : '\n\nNo soy admin así que no te puedo expulsar :"v'}`, null, { mentions: [m.sender] } )
-        if (isBotAdmin && chat.antiLink) {
-        	await conn.sendMessage(m.chat, { delete: m.key })
-            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-        } else if (!chat.antiLink) return //m.reply('')
+
+        // Notificar eliminación y mencionar al usuario
+        await conn.sendMessage(
+            m.chat,
+            { 
+                text: `*@${m.sender.split('@')[0]}* fue eliminado por \`Anti - Link\``,
+                mentions: [m.sender]
+            },
+            { quoted: m }
+        );
+
+        // Eliminar el mensaje con el link (si el bot es admin)
+        if (isBotAdmin) {
+            await conn.sendMessage(m.chat, { delete: m.key }).catch(() => {});
+            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove').catch(() => {});
+        }
     }
-    return !0
+    return true;
 }
