@@ -1,15 +1,18 @@
-console.log('✯ Iniciando ✯')
-
 import { join, dirname } from 'path'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { setupMaster, fork } from 'cluster'
 import { watchFile, unwatchFile } from 'fs'
 import cfonts from 'cfonts'
+import chalk from 'chalk'
+
+// Inicialización de SignalStore
+import { signalStore } from './lib/signalStore.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(__dirname)
 
+// Mostrar banner
 cfonts.say('Peak-Zero', {
   font: 'chrome',
   align: 'center',
@@ -25,29 +28,38 @@ cfonts.say(`WhatsApp Bot Multi Device`, {
 let isRunning = false
 
 async function start(files) {
-  if (isRunning) return
-  isRunning = true
+  try {
+    // Inicializar SignalStore primero
+    await signalStore.init()
+    console.log(chalk.green('✓ SignalStore inicializado correctamente'))
 
-  for (const file of files) {
-    const args = [join(__dirname, file), ...process.argv.slice(2)]
+    if (isRunning) return
+    isRunning = true
 
-    setupMaster({
-      exec: args[0],
-      args: args.slice(1),
-    })
+    for (const file of files) {
+      const args = [join(__dirname, file), ...process.argv.slice(2)]
 
-    let p = fork()
-
-    p.on('exit', (code) => {
-      isRunning = false
-      start(files)
-
-      if (code === 0) return
-      watchFile(args[0], () => {
-        unwatchFile(args[0])
-        start(files)
+      setupMaster({
+        exec: args[0],
+        args: args.slice(1),
       })
-    })
+
+      let p = fork()
+
+      p.on('exit', (code) => {
+        isRunning = false
+        start(files)
+
+        if (code === 0) return
+        watchFile(args[0], () => {
+          unwatchFile(args[0])
+          start(files)
+        })
+      })
+    }
+  } catch (error) {
+    console.error(chalk.red('✗ Error inicializando SignalStore:', error))
+    process.exit(1)
   }
 }
 
