@@ -1,66 +1,61 @@
+console.clear()
+console.log('🗣️ Iniciando Michi Wa Bot...')
+
 import { join, dirname } from 'path'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import { setupMaster, fork } from 'cluster'
 import { watchFile, unwatchFile } from 'fs'
 import cfonts from 'cfonts'
-import chalk from 'chalk'
-
-// Inicialización de SignalStore
-import { signalStore } from './lib/signalStore.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const require = createRequire(__dirname)
 
-// Mostrar banner
-cfonts.say('Peak-Zero', {
-  font: 'chrome',
+
+cfonts.say('✧ Michi Wa ✧', {
+  font: 'block',        
   align: 'center',
-  gradient: ['red', 'magenta']
+  gradient: ['cyan', 'magenta'],
+  env: 'node'
 })
 
-cfonts.say(`WhatsApp Bot Multi Device`, {
-  font: 'console',
+
+cfonts.say('💎 made by Ado 📍', {
+  font: 'console',     
   align: 'center',
-  gradient: ['red', 'magenta']
+  gradient: ['cyan', 'white'],
+  env: 'node'
 })
 
-let isRunning = false
+let isWorking = false
 
-async function start(files) {
-  try {
-    // Inicializar SignalStore primero
-    await signalStore.init()
-    console.log(chalk.green('✓ SignalStore inicializado correctamente'))
+async function launch(scripts) {
+  if (isWorking) return
+  isWorking = true
 
-    if (isRunning) return
-    isRunning = true
+  for (const script of scripts) {
+    const args = [join(__dirname, script), ...process.argv.slice(2)]
 
-    for (const file of files) {
-      const args = [join(__dirname, file), ...process.argv.slice(2)]
+    setupMaster({
+      exec: args[0],
+      args: args.slice(1),
+    })
 
-      setupMaster({
-        exec: args[0],
-        args: args.slice(1),
+    let child = fork()
+
+    child.on('exit', (code) => {
+      console.log(`⚠️ Proceso terminado con código ${code}`)
+      isWorking = false
+      launch(scripts)
+
+      if (code === 0) return
+      watchFile(args[0], () => {
+        unwatchFile(args[0])
+        console.log('🔄 Archivo actualizado, reiniciando...')
+        launch(scripts)
       })
-
-      let p = fork()
-
-      p.on('exit', (code) => {
-        isRunning = false
-        start(files)
-
-        if (code === 0) return
-        watchFile(args[0], () => {
-          unwatchFile(args[0])
-          start(files)
-        })
-      })
-    }
-  } catch (error) {
-    console.error(chalk.red('✗ Error inicializando SignalStore:', error))
-    process.exit(1)
+    })
   }
 }
 
-start(['starlights.js'])
+launch(['main.js'])

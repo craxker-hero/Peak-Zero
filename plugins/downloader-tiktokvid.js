@@ -1,33 +1,28 @@
-import Starlights from '@StarlightsTeam/Scraper'
+import axios from 'axios'
 
-let handler = async (m, { conn, usedPrefix, command, text, args }) => {
-  if (!text) return conn.reply(m.chat, '🚩 Ingresa un texto junto al comando.\n\n`Ejemplo:`\n' + `> *${usedPrefix + command}* Ai Hoshino Edit`, m, rcanal)
-  await m.react('🕓')
-  try {
-    let { title, author, duration, views, likes, comments_count, share_count, download_count, published, dl_url } = await Starlights.tiktokvid(text)
+const handler = async (m, { conn, args, usedPrefix, text, command }) => {
+  if (!text) return m.reply(`✐ Ingresa una búsqueda para TikTok\n> *Ejemplo:* ${usedPrefix + command} haikyuu edit`)
 
-      let txt = '`乂  T I K T O K  -  D O W N L O A D`\n\n'
-          txt += `    ✩  *Título* : ${title}\n`
-          txt += `    ✩  *Autor* : ${author}\n`
-          txt += `    ✩  *Duración* : ${duration} segundos\n`
-          txt += `    ✩  *Vistas* : ${views}\n`
-          txt += `    ✩  *Likes* : ${likes}\n`
-          txt += `    ✩  *Comentarios* : ${comments_count}\n`
-          txt += `    ✩  *Compartidos* : ${share_count}\n`
-          txt += `    ✩  *Publicado* : ${published}\n`
-          txt += `    ✩  *Descargas* : ${download_count}\n\n`
-          txt += `> 🚩 ${textbot}`
+  let res = await fetch(`https://apizell.web.id/download/tiktokplay?q=${encodeURIComponent(text)}`)
+  let json = await res.json()
 
-      await conn.sendFile(m.chat, dl_url, `thumbnail.mp4`, txt, m)
-      await m.react('✅')
+  if (!json.status || !json.data || !json.data.length) return m.reply('❌ No se encontró ningún video.')
 
-  } catch {
-    await m.react('✖️')
-  }
+  let vid = json.data[0]
+
+  let caption = `💜 \`${vid.title}\`\n\n` +
+                `> ✦ *Autor:* » ${vid.author}\n` +
+                `> ✰ *Vistas:* » ${vid.views.toLocaleString()}\n` +
+                `> 🜸 *Link:* » ${vid.url}`
+
+  await conn.sendMessage(m.chat, {
+    video: { url: vid.url },
+    caption
+  }, { quoted: m })
 }
-handler.help = ['tiktokvid *<búsqueda>*']
-handler.tags = ['downloader']
-handler.command = ['ttvid', 'tiktokvid']
-handler.register = true
 
+handler.help = ['tiktokvid']
+handler.tags = ['downloader']
+handler.command = ['tiktokvid', 'playtiktok']
+handler.register = true
 export default handler

@@ -1,66 +1,64 @@
-import { fileTypeFromBuffer } from 'file-type';
-import fetch from 'node-fetch';
-import { Blob } from 'buffer';
+import fetch from "node-fetch";
+import crypto from "crypto";
+import { FormData, Blob } from "formdata-node";
+import { fileTypeFromBuffer } from "file-type";
 
-// ================== FUNCIONES AUXILIARES ==================
-async function uploadToCatbox(buffer) {
-  const form = new FormData();
-  form.append('reqtype', 'fileupload');
-  form.append('fileToUpload', new Blob([buffer]), 'file');
+let handler = async (m, { conn }) => {
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || '';
+  if (!mime) return conn.reply(m.chat, `Por favor, responde a un archivo válido (imagen, video, etc.).`, m, rcanal);
 
-  const res = await fetch('https://catbox.moe/user/api.php', {
-    method: 'POST',
-    body: form
-  });
-  
-  const url = await res.text();
-  if (!url.startsWith('http')) throw new Error('Error al subir a Catbox');
-  return url;
-}
+  await m.react("⚜️");
+
+  try {
+    let media = await q.download();
+    let isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
+    let link = await catbox(media);
+
+    let txt = `*乂 U P L O A D E R 乂*\n\n`;
+    txt += `*⟩ Enlace* : ${link}\n`;
+    txt += `*⟩ Tamaño* : ${formatBytes(media.length)}\n`;
+    txt += `*⟩ Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n`;
+
+    await conn.sendFile(m.chat, media, 'thumbnail.jpg', txt, m, rcanal);
+
+    await m.react("✅");
+  } catch {
+    await m.react("😩");
+  }
+};
+
+handler.help = ['tourl'];
+handler.tags = ['tools'];
+handler.command = ['catbox', 'tourl'];
+handler.register = true
+export default handler;
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) {
+    return '0 B';
+  }
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
 }
 
-// ================== HANDLER PRINCIPAL ==================
-const handler = async (m) => {
-  const user = m.pushName || 'Usuario';
-  const q = m.quoted ? m.quoted : m;
-  const mime = (q.msg || q).mimetype || '';
-  
-  if (!mime) return m.reply('*✦  Por favor, responde a una imagen o video.*');
-  await m.react('⏳');
+async function catbox(content) {
+  const { ext, mime } = (await fileTypeFromBuffer(content)) || {};
+  const blob = new Blob([content.toArrayBuffer()], { type: mime });
+  const formData = new FormData();
+  const randomBytes = crypto.randomBytes(5).toString("hex");
+  formData.append("reqtype", "fileupload");
+  formData.append("fileToUpload", blob, randomBytes + "." + ext);
 
-  try {
-    const media = await q.download();
-    const type = await fileTypeFromBuffer(media);
-    
-    if (!type) throw new Error('Formato de archivo no soportado');
-    
-    const fileUrl = await uploadToCatbox(media);
-    const fileSize = formatBytes(media.length);
-    
-    // Formateo del mensaje con el estilo solicitado
-    const txt = `> *_✦「 ¡File uploaded! 」_*\n\n` +
-                `_❏  » *${fileUrl}*_\n` +
-                `_❀  » ${fileSize}_\n` +
-                `_↺  » ${user}_`;
+  const response = await fetch("https://catbox.moe/user/api.php", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36",
+    },
+  });
 
-    await m.reply(txt);
-    await m.react('✅');
-    
-  } catch (err) {
-    console.error(err);
-    await m.react('❌');
-    await m.reply('*⚠︎  Error al procesar el archivo:*\n' + err.message);
-  }
-};
-
-// ================== CONFIGURACIÓN ==================
-handler.help = ['tourl'];
-handler.tags = ['tools'];
-handler.command = ['tourl', 'upload', 'subir'];
-export default handler;
+  return await response.text();
+}

@@ -1,94 +1,87 @@
- {
-  "name": "Peak-Zero",
-  "version": "6.0.0",
-  "description": "Simple WhatsApp Bot Multi Device",
+{
+  "name": "Michi-WaBot-MD",
+  "version": "1.0.0",
+  "description": "Michi Multi Device",
   "main": "index.js",
   "type": "module",
   "directories": {
     "lib": "lib",
+    "src": "src",
     "plugins": "plugins"
   },
   "scripts": {
-    "start": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "patch-package"
+    "start": "node index.js"
   },
-  "keywords": [
-    "termux-whatsapp-bot",
-    "whatsapp-bot",
-    "whatsapp",
-    "js-whatsapp",
-    "whatsapp",
-    "Games-wabot",
-    "wabot-aq",
-    "multi-device",
-    "MD",
-    "baileys-md"
-  ],
-  "homepage": "https://github.com/StarlightsTeam/Ai-Hoshino",
+  "homepage": "https://github.com/Ado-rgb/Michi-Wa",
   "author": {
-    "name": "Irokz Dal ダーク⁩"
+    "name": "Ado-rgb"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/StarlightsTeam/Ai-Hoshino.git"
+    "url": "git+https://github.com/Ado-rgb/Michi-Wa.git"
   },
   "bugs": {
-    "url": "https://github.com/StarlightsTeam/Ai-Hoshino/issues"
+    "url": "https://github.com/Ado-rgb/Michi-Wa/issues"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@bochilteam/scraper": "^4.2.4",
-    "@whiskeysockets/baileys": "6.7.18",
-    "@ibaraki-douji/pixivts": "^2.4.1",
-    "@StarlightsTeam/Scraper": "github:StarlightsTeam/StarlightsTeam-Scraper",
+    "@hapi/boom": "^10.0.1",
+    "@StarlightsTeam/Scraper": "github:Ado926/Starlights-Scraper",
+    "@whiskeysockets/baileys": "github:Ado-rgb/AdonixBaileys",
+    "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
+    "ruhend-scraper": "*",
     "awesome-phonenumber": "^3.4.0",
-    "fluid-spotify.js": "*",
-    "axios": "^1.6.2",
-    "cfonts": "^3.2.0",
-    "chalk": "^5.3.0",
+    "axios": "^1.1.2",
+    "adonix-scraper": "1.2.5",
+    "acrcloud": "^1.4.0",
+    "cfonts": "^3.1.1",
+    "chalk": "^5.1.0",
     "cheerio": "npm:cheerio@1.0.0-rc.12",
-    "acrcloud": "*",
-    "file-type": "^18.3.0",
+    "colors": "1.4.0",
+    "express": "^4.18.1",
+    "figlet": "^1.7.0",
+    "file-type": "^18.0.0",
     "fluent-ffmpeg": "^2.1.2",
-    "formdata-node": "^4.4.1",
-    "google-it": "^2.0.0",
-    "node-webpmux": "^3.1.0",
-    "human-readable": "^1.0.0",
-    "jsdom": "^22.1.0",
+    "fluid-spotify.js": "*",
+    "form-data": "^4.0.0",
+    "formdata-node": "^5.0.0",
+    "g-i-s": "^2.1.6",
+    "google-it": "^1.6.4",
+    "human-readable": "^0.2.1",
+    "jsdom": "^20.0.1",
+    "jimp": "^1.6.0",
+    "link-preview-js": "^3.0.0",
     "lodash": "^4.17.21",
     "lowdb": "^3.0.0",
-    "jimp": "^0.22.10",
-    "moment-timezone": "^0.5.43",
-    "translate-google-api": "^1.0.4",
-    "node-gtts": "^2.0.2",
+    "megajs": "^1.1.3",
+    "mime-types": "^2.1.35",
+    "mongoose": "^6.6.5",
     "node-cache": "^5.1.2",
-    "url-regex-safe": "^3.0.0",
-    "perf_hooks": "*",
-    "url-file-size": "^1.0.0",
-    "pino": "^8.16.0",
-    "qrcode": "^1.5.3",
+    "node-fetch": "^3.2.10",
+    "node-gtts": "^2.0.2",
+    "node-webpmux": "^3.1.3",
+    "openai": "^3.3.0",
+    "pdfkit": "^0.13.0",
+    "perf_hooks": "^0.0.1",
+    "pino": "^8.6.1",
+    "pino-pretty": "^9.1.1",
+    "qrcode": "^1.5.1",
     "qrcode-terminal": "^0.12.0",
-    "readline": "*",
+    "readline": "^1.3.0",
     "sanzy-spotifydl": "*",
+    "similarity": "^1.2.1",
+    "socket.io": "^4.5.2",
     "syntax-error": "^1.4.0",
-    "yargs": "^17.7.2",
-    "ytdl-han": "github:HanSamu-27/ytdl-han",
-    "yt-search": "^2.10.4",
-    "level": "^8.0.0",
-    "pino-pretty": "^10.2.3"
+    "terminal-image": "^2.0.0",
+    "translate-google-api": "^1.0.4",
+    "url-file-size": "^1.0.5-1",
+    "url-regex-safe": "^3.0.0",
+    "ws": "^8.17.1",
+    "yargs": "^17.6.0",
+    "yt-search": "^2.10.3"
   },
   "optionalDependencies": {
-    "@vitalets/google-translate-api": "^9.2.0",
-    "sharp": "^0.32.2"
-  },
-  "devDependencies": {
-    "patch-package": "^6.5.1"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "overrides": {
-    "sharp": "^0.32.2"
+    "moment-timezone": "^0.5.45"
   }
 }

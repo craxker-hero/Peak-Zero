@@ -1,41 +1,39 @@
-/*import acrcloud from 'acrcloud'
-import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
-import yts from 'yt-search'
+// plugins/daradmin.js
+const daradmin = async (m, { conn, isOwner }) => {
+  try {
+    const chatId = m.chat
+    if (!chatId.endsWith('@g.us')) return m.reply('⚠️ Este comando solo se puede usar en grupos.')
 
-let acr = new acrcloud({
-  host: 'identify-eu-west-1.acrcloud.com',
-  access_key: 'c33c767d683f78bd17d4bd4991955d81',
-  access_secret: 'bvgaIAEtADBTbLwiPGYlxupWqkNGIjT7J9Ag2vIu'
-})
-let handler = async (m, { conn, usedPrefix, command }) => {
-  let q = m.quoted ? m.quoted : m
-  let mime = (q.msg || q).mimetype || q.mediaType || ''
-  if (/video|audio/.test(mime)) {
-  let buffer = await q.download()
-  let user = global.db.data.users[m.sender]
-  await m.react('🕓')
-  let { status, metadata } = await acr.identify(buffer)
-  if (status.code !== 0) throw status.msg 
-  let { title, artists, album, genres, release_date } = metadata.music[0]
-  let res = await yts(title)
-  let vid = res.videos[0]
-  let v = vid.url
-  let yt = await youtubedl(v).catch(async () => await youtubedlv2(v))
-  let url = await yt.audio['128kbps'].download()
-  let title2 = await yt.title
-  let txt = '`乂  W H A T M U S I C  -  T O O L S`\n\n'
-      txt += `	✩   *Titulo* : ${title}${artists ? `\n	✩   *Artists* : ${artists.map(v => v.name).join(', ')}` : ''}`
-      txt += `${album ? `\n	✩   *Album* : ${album.name}` : ''}${genres ? `\n	✩   *Genero* : ${genres.map(v => v.name).join(', ')}` : ''}\n`
-      txt += `	✩   *Fecha de lanzamiento* : ${release_date}\n\n`
-      txt += `> 🚩 *${textbot}*`
-  await conn.sendFile(m.chat, vid.thumbnail, 'thumbnail.jpg', txt, m, null, rcanal)
-  await conn.sendFile(m.chat, url, title2 + '.mp3', null, m, false, { mimetype: 'audio/mpeg', asDocument: user.useDocument })
-  await m.react('✅')
-  } else return conn.reply(m.chat, `🚩 Etiqueta un audio o video de poca duración con el comando *${usedPrefix + command}* para ver que música contiene.`, m, rcanal)
+    await conn.sendMessage(chatId, { react: { text: '🔥', key: m.key } })
+
+    const groupMetadata = await conn.groupMetadata(chatId)
+    const senderId = m.sender
+    const senderParticipant = groupMetadata.participants.find(p => p.id === senderId)
+    const isSenderAdmin = senderParticipant && (senderParticipant.admin === 'admin' || senderParticipant.admin === 'superadmin')
+
+    if (!isSenderAdmin && !isOwner) {
+      return m.reply('⚠️ Solo los administradores o el propietario pueden otorgar derechos de admin.')
+    }
+
+    let targetId = m.quoted?.sender || (m.mentionedJid && m.mentionedJid[0])
+    if (!targetId) {
+      return m.reply('⚠️ Debes responder a un mensaje o mencionar a un usuario para promoverlo.')
+    }
+
+    await conn.groupParticipantsUpdate(chatId, [targetId], 'promote')
+    await conn.sendMessage(chatId, {
+      text: `✅ Se ha promovido a @${targetId.split('@')[0]} a administrador.`,
+      mentions: [targetId]
+    }, { quoted: m })
+
+    await conn.sendMessage(chatId, { react: { text: '✅', key: m.key } })
+  } catch (e) {
+    console.error('❌ Error en daradmin:', e)
+    await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al otorgar derechos de admin.' }, { quoted: m })
+  }
 }
-handler.help = ['whatmusic *<audio/video>*']
-handler.tags = ['tools']
-handler.command = ['whatmusic', 'shazam']
-//handler.limit = 1
-handler.register = true 
-export default handler*/
+
+daradmin.command = /^(daradmin|daradmins)$/i
+daradmin.help = ['daradmin']
+daradmin.tags = ['group']
+export default daradmin

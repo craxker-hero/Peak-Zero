@@ -1,52 +1,99 @@
-import fs from 'fs'
+import { promises as fs } from 'fs'
+const acertijosPath = './database/acertijos.json'
 
-let cooldown = 60000 
-let poin = 450
+let acertijoActual = null
+const tiempoLimite = 60000
+const maxIntentos = 6
 
-let handler = async (m, { conn, usedPrefix }) => {
-let now = new Date()
-let lastUsage = global.db.data.users[m.sender].lastAcet || 0
-if (now - lastUsage < cooldown) {
-let remainingTime = cooldown - (now - lastUsage)
-return m.reply(`⏱️ ¡Espera ${msToTime(remainingTime)} antes de volver a usar el comando!`)
+async function cargarAcertijos() {
+  try {
+    const data = await fs.readFile(acertijosPath, 'utf-8')
+    return JSON.parse(data)
+  } catch {
+    return []
+  }
 }
-conn.tekateki = conn.tekateki ? conn.tekateki : {}
-let id = m.chat
-if (id in conn.tekateki) {
-conn.reply(m.chat, 'Todavía hay acertijos sin responder en este chat', conn.tekateki[id][0])
-return null
+
+let handler = async (m, { conn, usedPrefix, command, text }) => {
+  const acertijos = await cargarAcertijos()
+  if (acertijos.length === 0) return conn.reply(m.chat, 'No hay acertijos disponibles 🤷‍♂️', m)
+
+  if (!acertijoActual) {
+    const idx = Math.floor(Math.random() * acertijos.length)
+    acertijoActual = {
+      ...acertijos[idx],
+      inicio: Date.now(),
+      jugador: m.sender,
+      chat: m.chat,
+      intentos: 0
+    }
+    return conn.reply(m.chat, `
+🎭 *¡ACERTIJO NUEVO PA' TI!* 🎭
+
+${acertijoActual.pregunta}
+
+*Responde rápido antes de que se acabe el tiempo* (60 segundos) y solo tienes 6 intentos.
+
+*Usa:* ${usedPrefix}${command} <tu respuesta>
+    `.trim(), m)
+  }
+
+  if (m.sender !== acertijoActual.jugador) {
+    return conn.reply(m.chat, `❗ Solo @${acertijoActual.jugador.split`@`[0]} puede responder este acertijo.`, m, { mentions: [acertijoActual.jugador] })
+  }
+
+  if (!text) return conn.reply(m.chat, `✎ Responde el acertijo con: *${usedPrefix}${command} <tu respuesta>*`, m)
+
+  acertijoActual.intentos++
+
+  if (text.toLowerCase().trim() === acertijoActual.respuesta) {
+    await conn.reply(m.chat, `
+🎉 ¡Bien hecho @${m.sender.split`@`[0]}! 🎉
+Acertaste el acertijo:
+
+${acertijoActual.pregunta}
+
+Respuesta: *${acertijoActual.respuesta}*
+
+👏 Eres un duro, felicidades w
+    `.trim(), m, { mentions: [m.sender] })
+    acertijoActual = null
+  } else {
+    if (acertijoActual.intentos >= maxIntentos) {
+      await conn.reply(m.chat, `
+❌ Se te acabaron los intentos (6) :c
+
+⌛ Se acabó el tiempo para responder!
+
+La respuesta correcta era: *${acertijoActual.respuesta}*
+
+${acertijoActual.pregunta}
+      `.trim(), m)
+      acertijoActual = null
+    } else {
+      await conn.reply(m.chat, `❌ Incorrecto, intenta otra vez.\n\nIntento *${acertijoActual.intentos}* de *${maxIntentos}*\n\nPregunta: ${acertijoActual.pregunta}`, m)
+    }
+  }
 }
-let tekateki = JSON.parse(fs.readFileSync(`./plugins/_acertijo.json`))
-let json = tekateki[Math.floor(Math.random() * tekateki.length)]
-let _clue = json.response
-let clue = _clue.replace(/[A-Za-z]/g, '_')
-let caption = `
-ⷮ *${json.question}*
-*• Tiempo:* ${(cooldown / 1000).toFixed(2)} segundos
-*• Bono:* +${poin} Exp
-`.trim()
-conn.tekateki[id] = [
-await conn.reply(m.chat, caption, m), json, poin,
-setTimeout(async () => {
-if (conn.tekateki[id]) {
-await conn.reply(m.chat, `Se acabó el tiempo!\n*Respuesta:* ${json.response}`, conn.tekateki[id][0])
-delete conn.tekateki[id]
-}
-}, cooldown)
-]
-global.db.data.users[m.sender].lastAcet = now
-}
+
+setInterval(() => {
+  if (!acertijoActual) return
+  if (Date.now() - acertijoActual.inicio > tiempoLimite) {
+    global.conn?.sendMessage(
+      acertijoActual.chat,
+      {
+        text: `⌛ Se acabó el tiempo para responder!\n\n${acertijoActual.pregunta}\n\nLa respuesta era: *${acertijoActual.respuesta}*`
+      },
+      { mentions: [acertijoActual.jugador] }
+    )
+    acertijoActual = null
+  }
+}, 15000)
+
 handler.help = ['acertijo']
 handler.tags = ['game']
-handler.command = /^(acertijo|acert|pregunta|adivinanza|tekateki)$/i
+handler.command = ['acertijo', 'adivinanza']
+handler.register = true
+handler.group = false
+
 export default handler
-
-function msToTime(duration) {
-    var seconds = Math.floor((duration / 1000) % 60),
-        minutes = Math.floor((duration / (1000 * 60)) % 60)
-
-    minutes = (minutes < 10) ? "0" + minutes : minutes
-    seconds = (seconds < 10) ? "0" + seconds : seconds
-
-    return minutes + " Minuto(s) " + seconds + " Segundo(s)"
-}

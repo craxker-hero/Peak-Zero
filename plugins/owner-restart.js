@@ -1,16 +1,19 @@
-import { spawn } from 'child_process'
-let handler = async (m, { conn, isROwner, text }) => {
-    if (!process.send) return m.react('✖️')
-    if (conn.user.jid == conn.user.jid) {
-    await m.reply('🚩 Reiniciando Bot...')
-    process.send('reset')
-  } else return m.react('✖️')
+let handler = async (m, { conn, usedPrefix, command }) => {
+
+    try {
+        m.reply('「❀」 Reiniciando El Bot....')
+        setTimeout(() => {
+            process.exit(0)
+        }, 3000) 
+    } catch (error) {
+        console.log(error)
+        conn.reply(m.chat, `${error}`, m)
+    }
 }
 
 handler.help = ['restart']
 handler.tags = ['owner']
-handler.command = ['restart','reiniciar'] 
-
+handler.command = ['rei', 'restart'] 
 handler.rowner = true
 
 export default handler
