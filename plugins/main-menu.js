@@ -34,9 +34,9 @@ const emojis = {
   fun: '🍚',
 }
 
-const owner = '59897246324@s.whatsapp.net'
+const owner = "5492916439595@s.whatsapp.net'
 const ownerMention = owner.split('@')[0]
-const creatorNumber = '59897246324'
+const creatorNumber = '5492916439595'
 
 let estilo = (text, style = 1) => {
   var xStr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','1','2','3','4','5','6','7','8','9','0']
