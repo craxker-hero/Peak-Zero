@@ -1,6 +1,6 @@
 let handler = async (m, { conn }) => {
-  const name = 'Ado'
-  const number = '50493732693' // sin @
+  const name = 'Craxker'
+  const number = '5492916439595' // sin @
   const email = 'me.ado926codes@gmail.com'
   const org = 'Creador de Michi Wa Bot'
   const note = 'Mini desarrollador de bots de WhatsApp'
