@@ -19,8 +19,8 @@ const handler = async (m, { conn }) => {
     }
   }
 
-  // Esperamos un pequeño mensaje para medir ping real
-  const sentMsg = await conn.sendMessage(m.chat, { text: '🏓 Midiendo ping...' }, { quoted: m })
+  // Enviar mensaje inicial con el emoji ❀
+  const sentMsg = await conn.sendMessage(m.chat, { text: '❀ ¡Pong!' }, { quoted: m })
 
   const end = performance.now()
   const realPing = Math.round(end - start)
@@ -28,9 +28,16 @@ const handler = async (m, { conn }) => {
   // Si Baileys tiene ping nativo lo mostramos también
   const wsPing = conn?.ws?.ping?.last || 0
 
-  await conn.sendMessage(m.chat, { 
-    text: `☁︎ *Ping:* ${realPing} ms\n> ${nombreBot}` 
-  }, { quoted: sentMsg })
+  // Editar el mensaje original con la velocidad del ping
+  await conn.relayMessage(m.chat, {
+    protocolMessage: {
+      key: sentMsg.key,
+      type: 14,
+      editedMessage: {
+        conversation: `❀ ¡Pong! ${realPing}ms`
+      }
+    }
+  }, {})
 }
 
 handler.command = ['p', 'ping']
