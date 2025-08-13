@@ -20,7 +20,7 @@ const handler = async (m, { conn }) => {
   }
 
   // Enviar mensaje inicial con el emoji ✰
-  const sentMsg = await conn.sendMessage(m.chat, { text: '❀ ¡Pong!' }, { quoted: m })
+  const sentMsg = await conn.sendMessage(m.chat, { text: '❀　¡Pong!' }, { quoted: m })
 
   const end = performance.now()
   const realPing = Math.round(end - start)
