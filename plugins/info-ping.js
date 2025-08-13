@@ -15,26 +15,23 @@ const handler = async (m, { conn }) => {
       const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
       if (config.name) nombreBot = config.name
     } catch (err) {
-      console.log('⚠️ No se pudo leer config del subbot:', err)
+      console.log('⚠︎ No se pudo leer config del subbot:', err)
     }
   }
 
-  // Enviar mensaje inicial con el emoji ❀
+  // Enviar mensaje inicial con el emoji ✰
   const sentMsg = await conn.sendMessage(m.chat, { text: '❀ ¡Pong!' }, { quoted: m })
 
   const end = performance.now()
   const realPing = Math.round(end - start)
 
-  // Si Baileys tiene ping nativo lo mostramos también
-  const wsPing = conn?.ws?.ping?.last || 0
-
-  // Editar el mensaje original con la velocidad del ping
+  // Editar el mensaje original con el formato deseado
   await conn.relayMessage(m.chat, {
     protocolMessage: {
       key: sentMsg.key,
       type: 14,
       editedMessage: {
-        conversation: `❀ ¡Pong! ${realPing}ms`
+        conversation: `❀ ¡Pong!\n> Tiempo ⴵ ${realPing}ms`
       }
     }
   }, {})
