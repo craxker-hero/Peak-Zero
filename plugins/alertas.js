@@ -8,40 +8,23 @@ let handler = async (m, { conn, command, args, usedPrefix, isAdmin, isOwner, par
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
   const chat = global.db.data.chats[m.chat]
 
-  // Detectar cambios de administrador (promote/demote)
-  if (m.messageStubType === 21 || m.messageStubType === 22) {
-    const actionUser = m.sender.split('@')[0]
-    const targetUser = m.messageStubParameters[0].split('@')[0]
-    const mentionActionUser = `@${actionUser}`
-    const mentionTargetUser = `@${targetUser}`
-    
-    if (chat.alertas !== false) {
-      let message = ''
-      if (m.messageStubType === 21) { // promote
-        message = `> ❀ el usuario ${mentionTargetUser} ah sido promovido a administrador acción echa por ${mentionActionUser}`
-      } else if (m.messageStubType === 22) { // demote
-        message = `> ❀ el usuario ${mentionTargetUser} ah sido degradado de administrador acción echa por ${mentionActionUser}`
-      }
-      return conn.sendMessage(m.chat, { text: message, mentions: [actionUser, targetUser].map(id => id + '@s.whatsapp.net') })
-    }
-    return
-  }
-
   // Soporte para múltiples comandos: /enable alerts, /alert on, etc.
   const action = command.toLowerCase()
   const isEnable = ['enable', 'on', 'activar'].includes(action)
   const isDisable = ['disable', 'off', 'desactivar'].includes(action)
 
-  // Verificar permisos
-  if (!(isAdmin || isOwner)) return m.reply('❀ Solo los administradores pueden usar este comando.')
-
-  // Configurar el estado
-  if (isEnable) {
-    chat.alertas = true
-    return m.reply('✰ *haz activado las alertas*')
-  } else if (isDisable) {
-    chat.alertas = false
-    return m.reply('✰ *se han desactivado las alertas*')
+  // Verificar permisos para comandos de configuración
+  if (isEnable || isDisable) {
+    if (!(isAdmin || isOwner)) return m.reply('❀ Solo los administradores pueden usar este comando.')
+    
+    // Configurar el estado
+    if (isEnable) {
+      chat.alertas = true
+      return m.reply('✰ *haz activado las alertas*')
+    } else if (isDisable) {
+      chat.alertas = false
+      return m.reply('✰ *se han desactivado las alertas*')
+    }
   }
 
   // Mostrar estado actual si no se especifica acción
@@ -58,6 +41,39 @@ let handler = async (m, { conn, command, args, usedPrefix, isAdmin, isOwner, par
 `
 
   m.reply(helpMessage)
+}
+
+// Función separada para manejar eventos de promoción/democión
+export async function handlePromoteDemote(m, { conn }) {
+  // Verificar si es un grupo
+  if (!m.isGroup) return
+  
+  // Inicializar datos del chat si no existen
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  const chat = global.db.data.chats[m.chat]
+  
+  // Si las alertas están desactivadas, no hacer nada
+  if (chat.alertas === false) return
+  
+  // Detectar cambios de administrador (promote/demote)
+  if (m.messageStubType === 21 || m.messageStubType === 22) {
+    const actionUser = m.sender.split('@')[0]
+    const targetUser = m.messageStubParameters[0].split('@')[0]
+    const mentionActionUser = `@${actionUser}`
+    const mentionTargetUser = `@${targetUser}`
+    
+    let message = ''
+    if (m.messageStubType === 21) { // promote
+      message = `> ❀ el usuario ${mentionTargetUser} ah sido promovido a administrador acción echa por ${mentionActionUser}`
+    } else if (m.messageStubType === 22) { // demote
+      message = `> ❀ el usuario ${mentionTargetUser} ah sido degradado de administrador acción echa por ${mentionActionUser}`
+    }
+    
+    await conn.sendMessage(m.chat, { 
+      text: message, 
+      mentions: [actionUser, targetUser].map(id => id + '@s.whatsapp.net') 
+    })
+  }
 }
 
 // Comandos soportados (con alias)
