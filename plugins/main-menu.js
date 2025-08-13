@@ -91,7 +91,7 @@ const defaultMenu = {
   header: '\n%category',
   body: '°𓃉𐇽ܳ𓏸%emojiᮬᩬִּ〫᪲۟. %cmd %islimit %isPremium',
   footer: '',
-  after: '\n> 𝖯𝗈𝗐𝖾𝗋 𝖡𝗒 𝖨𝗓𝗎𝗆𝗂 - 𝖬𝖺𝗈 𝖢𝗁𝖺𝗇',
+  after: '\n> 𝖯𝗈𝗐𝖾𝗋 𝖡𝗒 Craxker - 𝖬𝖺𝗈 𝖢𝗁𝖺𝗇',
 }
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
