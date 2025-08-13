@@ -31,7 +31,7 @@ const handler = async (m, { conn }) => {
       key: sentMsg.key,
       type: 14,
       editedMessage: {
-        conversation: `❀ ¡Pong!\n> Tiempo ⴵ ${realPing}ms`
+        conversation: `❀　¡Pong!\n> Tiempo ⴵ ${realPing}ms`
       }
     }
   }, {})
