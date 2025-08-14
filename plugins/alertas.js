@@ -16,7 +16,7 @@ let handler = async (m, { conn, command, args, usedPrefix, isAdmin, isOwner, par
   // Verificar permisos para comandos de configuración
   if (isEnable || isDisable) {
     if (!(isAdmin || isOwner)) return m.reply('❀ Solo los administradores pueden usar este comando.')
-    
+
     // Configurar el estado
     if (isEnable) {
       chat.alertas = true
@@ -43,36 +43,43 @@ let handler = async (m, { conn, command, args, usedPrefix, isAdmin, isOwner, par
   m.reply(helpMessage)
 }
 
-// Función separada para manejar eventos de promoción/democión
-export async function handlePromoteDemote(m, { conn }) {
-  // Verificar si es un grupo
-  if (!m.isGroup) return
-  
-  // Inicializar datos del chat si no existen
-  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-  const chat = global.db.data.chats[m.chat]
-  
-  // Si las alertas están desactivadas, no hacer nada
-  if (chat.alertas === false) return
-  
-  // Detectar cambios de administrador (promote/demote)
-  if (m.messageStubType === 21 || m.messageStubType === 22) {
-    const actionUser = m.sender.split('@')[0]
-    const targetUser = m.messageStubParameters[0].split('@')[0]
-    const mentionActionUser = `@${actionUser}`
-    const mentionTargetUser = `@${targetUser}`
+// Función para manejar eventos de promoción/democión
+export async function handlePromoteDemote(chatUpdate) {
+  try {
+    const m = chatUpdate.messages[0]
+    if (!m) return
     
-    let message = ''
-    if (m.messageStubType === 21) { // promote
-      message = `> ❀ el usuario ${mentionTargetUser} ah sido promovido a administrador acción echa por ${mentionActionUser}`
-    } else if (m.messageStubType === 22) { // demote
-      message = `> ❀ el usuario ${mentionTargetUser} ah sido degradado de administrador acción echa por ${mentionActionUser}`
+    // Verificar si es un grupo
+    if (!m.key.remoteJid.endsWith('@g.us')) return
+
+    // Inicializar datos del chat si no existen
+    if (!global.db.data.chats[m.key.remoteJid]) global.db.data.chats[m.key.remoteJid] = {}
+    const chat = global.db.data.chats[m.key.remoteJid]
+
+    // Si las alertas están desactivadas, no hacer nada
+    if (chat.alertas === false) return
+
+    // Detectar cambios de administrador (promote/demote)
+    if (m.messageStubType === 21 || m.messageStubType === 22) {
+      const actionUser = m.participant.split('@')[0]
+      const targetUser = m.messageStubParameters[0].split('@')[0]
+      const mentionActionUser = `@${actionUser}`
+      const mentionTargetUser = `@${targetUser}`
+
+      let message = ''
+      if (m.messageStubType === 21) { // promote
+        message = `> ❀ el usuario ${mentionTargetUser} ah sido promovido a administrador acción echa por ${mentionActionUser}`
+      } else if (m.messageStubType === 22) { // demote
+        message = `> ❀ el usuario ${mentionTargetUser} ah sido degradado de administrador acción echa por ${mentionActionUser}`
+      }
+
+      await conn.sendMessage(m.key.remoteJid, { 
+        text: message, 
+        mentions: [actionUser + '@s.whatsapp.net', targetUser + '@s.whatsapp.net'] 
+      })
     }
-    
-    await conn.sendMessage(m.chat, { 
-      text: message, 
-      mentions: [actionUser, targetUser].map(id => id + '@s.whatsapp.net') 
-    })
+  } catch (error) {
+    console.error('Error en handlePromoteDemote:', error)
   }
 }
 
