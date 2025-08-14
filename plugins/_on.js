@@ -15,40 +15,70 @@ async function isAdminOrOwner(m, conn) {
 }
 
 const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
-  if (!m.isGroup) return m.reply('🔒 Solo funciona en grupos.')
+  if (!m.isGroup) return m.reply('✦　Solo funciona en grupos.')
 
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
   const chat = global.db.data.chats[m.chat]
+  
+  // Manejo de alertas (nuevo)
+  const action = command.toLowerCase()
+  const isEnable = ['enable', 'on', 'activar'].includes(action)
+  const isDisable = ['disable', 'off', 'desactivar'].includes(action)
+
+  if (isEnable || isDisable) {
+    if (!(isAdmin || isOwner)) return m.reply('❀ Solo los administradores pueden usar este comando.')
+
+    if (isEnable) {
+      chat.alertas = true
+      return m.reply('✰ *haz activado las alertas*')
+    } else if (isDisable) {
+      chat.alertas = false
+      return m.reply('✰ *se han desactivado las alertas*')
+    }
+  }
+
   const type = (args[0] || '').toLowerCase()
   const enable = command === 'on'
 
-  if (!['antilink', 'welcome', 'antiarabe'].includes(type)) {
-    return m.reply(`✳️ Usa:\n*.on antilink* / *.off antilink*\n*.on welcome* / *.off welcome*\n*.on antiarabe* / *.off antiarabe*`)
+  if (!['antilink', 'welcome', 'antiarabe', 'alertas'].includes(type)) {
+    return m.reply(`✧ Usa:\n*.on antilink* / *.off antilink*\n*.on welcome* / *.off welcome*\n*.on antiarabe* / *.off antiarabe*\n*.on alertas* / *.off alertas*`)
   }
 
-  if (!(isAdmin || isOwner)) return m.reply('❌ Solo admins pueden activar o desactivar funciones.')
+  if (!(isAdmin || isOwner)) return m.reply('✿ Solo admins pueden activar o desactivar funciones.')
 
   if (type === 'antilink') {
     chat.antilink = enable
-    return m.reply(`✅ Antilink ${enable ? 'activado' : 'desactivado'}.`)
+    return m.reply(`✦ Antilink ${enable ? 'activado' : 'desactivado'}.`)
   }
 
   if (type === 'welcome') {
     chat.welcome = enable
-    return m.reply(`✅ Welcome ${enable ? 'activado' : 'desactivado'}.`)
+    return m.reply(`✦ Welcome ${enable ? 'activado' : 'desactivado'}.`)
   }
 
   if (type === 'antiarabe') {
     chat.antiarabe = enable
-    return m.reply(`✅ Antiarabe ${enable ? 'activado' : 'desactivado'}.`)
+    return m.reply(`✦ Antiarabe ${enable ? 'activado' : 'desactivado'}.`)
+  }
+
+  if (type === 'alertas') {
+    chat.alertas = enable
+    return m.reply(`✦ Alertas de admin ${enable ? 'activadas' : 'desactivadas'}.`)
   }
 }
 
-handler.command = ['on', 'off']
+handler.command = ['on', 'off', 'enable', 'disable', 'activar', 'desactivar', 'alert', 'alerts', 'alertas']
 handler.group = true
 handler.register = true
 handler.tags = ['group']
-handler.help = ['on welcome', 'off welcome', 'on antilink', 'off antilink']
+handler.help = [
+  'on welcome', 'off welcome',
+  'on antilink', 'off antilink',
+  'on antiarabe', 'off antiarabe',
+  'on alertas', 'off alertas',
+  'enable alerts', 'disable alerts',
+  'alert on', 'alert off'
+]
 
 handler.before = async (m, { conn }) => {
   if (!m.isGroup) return
@@ -156,6 +186,26 @@ handler.before = async (m, { conn }) => {
         contextInfo: { mentionedJid: [userId] }
       })
     }
+  }
+
+  // ALERTAS DE PROMOCIÓN/DEMOCIÓN (nuevo)
+  if (chat.alertas && [21, 22].includes(m.messageStubType)) {
+    const actionUser = m.participant
+    const targetUser = m.messageStubParameters?.[0]
+    
+    if (!actionUser || !targetUser) return
+
+    let message = ''
+    if (m.messageStubType === 21) { // promote
+      message = `> ❀ El usuario @${targetUser.split('@')[0]} ha sido promovido a administrador\n> Acción realizada por: @${actionUser.split('@')[0]}`
+    } else if (m.messageStubType === 22) { // demote
+      message = `> ❀ El usuario @${targetUser.split('@')[0]} ha sido degradado de administrador\n> Acción realizada por: @${actionUser.split('@')[0]}`
+    }
+
+    await conn.sendMessage(m.chat, { 
+      text: message, 
+      mentions: [actionUser, targetUser]
+    })
   }
 }
 
