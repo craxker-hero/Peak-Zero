@@ -37,7 +37,7 @@ let handler = async (m, { conn, command, args, usedPrefix, isAdmin, isOwner, par
   m.reply(helpMessage)
 }
 
-// Función para manejar eventos de promoción/democión
+// Función mejorada para manejar eventos de promoción/democión
 export async function handlePromoteDemote(chatUpdate) {
   try {
     const m = chatUpdate.messages[0]
@@ -45,28 +45,38 @@ export async function handlePromoteDemote(chatUpdate) {
     
     if (!m.key.remoteJid.endsWith('@g.us')) return
 
-    if (!global.db.data.chats[m.key.remoteJid]) global.db.data.chats[m.key.remoteJid] = {}
-    const chat = global.db.data.chats[m.key.remoteJid]
+    const chatJid = m.key.remoteJid
+    if (!global.db.data.chats[chatJid]) global.db.data.chats[chatJid] = {}
+    const chat = global.db.data.chats[chatJid]
 
     if (chat.alertas === false) return
 
     if (m.messageStubType === 21 || m.messageStubType === 22) {
-      const actionUser = m.participant.split('@')[0]
-      const targetUser = m.messageStubParameters[0].split('@')[0]
-      const mentionActionUser = `@${actionUser}`
-      const mentionTargetUser = `@${targetUser}`
+      // Obtener información del que realizó la acción y el afectado
+      const actionUser = m.participant
+      const targetUser = m.messageStubParameters[0]
+      
+      // Obtener metadatos del grupo para verificar si son administradores
+      const groupMetadata = await global.conn.groupMetadata(chatJid).catch(e => console.error(e))
+      const participants = groupMetadata?.participants || []
+      
+      const actionParticipant = participants.find(p => p.id === actionUser)
+      const targetParticipant = participants.find(p => p.id === targetUser)
+
+      // Solo continuar si ambos usuarios existen en el grupo
+      if (!actionParticipant || !targetParticipant) return
 
       let message = ''
       if (m.messageStubType === 21) { // promote
-        message = `> ❀ el usuario ${mentionTargetUser} ah sido promovido a administrador acción echa por ${mentionActionUser}`
+        message = `> ❀ El usuario @${targetUser.split('@')[0]} ha sido promovido a administrador\n> Acción realizada por: @${actionUser.split('@')[0]}`
       } else if (m.messageStubType === 22) { // demote
-        message = `> ❀ el usuario ${mentionTargetUser} ah sido degradado de administrador acción echa por ${mentionActionUser}`
+        message = `> ❀ El usuario @${targetUser.split('@')[0]} ha sido degradado de administrador\n> Acción realizada por: @${actionUser.split('@')[0]}`
       }
 
-      // Enviar mensaje usando la conexión principal
-      await global.conn.sendMessage(m.key.remoteJid, { 
+      // Enviar mensaje con menciones
+      await global.conn.sendMessage(chatJid, { 
         text: message, 
-        mentions: [actionUser + '@s.whatsapp.net', targetUser + '@s.whatsapp.net'] 
+        mentions: [actionUser, targetUser]
       })
     }
   } catch (error) {
