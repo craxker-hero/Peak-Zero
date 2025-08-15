@@ -3,7 +3,7 @@ const demoteHandler = async (m, { conn, isAdmin, isBotAdmin, isOwner, isROwner, 
   if (!m.isGroup) return m.reply('*✦ Este comando solo funciona en grupos*');
 
   // Verificar permisos
-  if (!isAdmin && !isOwner && !isROwner) return m.reply('*❮✦❯ Solo los administradores pueden usar este comando*');
+  if (!isAdmin && !isOwner && !isROwner) return m.reply('*✦ Solo los administradores pueden usar este comando*');
 
   // Verificar si el bot es admin
   if (!isBotAdmin) return m.reply('*✦ ¡El bot necesita ser administrador para realizar esta acción!*');
