@@ -4,7 +4,7 @@ const promoteHandler = async (m, { conn, isAdmin, isBotAdmin, isOwner, isROwner,
 
   // Verificar permisos - MODIFICACIÓN CLAVE: Owner puede usarlo sin ser admin
   if (!isAdmin && !isOwner && !isROwner) {
-    return m.reply('*✦ Solo administradores del grupo o propietarios del bot pueden usar este comando*');
+    return m.reply('*✦ Solo administradores del grupo pueden usar este comando*');
   }
 
   // Verificar si el bot es admin (necesario para la acción)
@@ -25,7 +25,10 @@ const promoteHandler = async (m, { conn, isAdmin, isBotAdmin, isOwner, isROwner,
   try {
     // Promover al usuario
     await conn.groupParticipantsUpdate(m.chat, [userToPromote], 'promote');
-    m.reply(`*✦ @${userToPromote.split('@')[0]} ahora es administrador*`, null, { mentions: [userToPromote] });
+    const actionUser = m.sender.split('@')[0];
+    m.reply(`> ❀ El usuario @${userToPromote.split('@')[0]} ha sido promovido a administrador por @${actionUser}`, null, { 
+      mentions: [userToPromote, m.sender] 
+    });
   } catch (error) {
     console.error(error);
     m.reply('*✦ Error al promover. Verifica los permisos del bot.*');
