@@ -1,47 +1,43 @@
-import { isAdmin, getGroupData } from '../lib/groupManager.js';
+const handler = async (m, {conn, participants, groupMetadata}) => {
+  const pp = await conn.profilePictureUrl(m.chat, 'image').catch((_) => null) || `${global.icons}`;
+  const {antiToxic, reaction, antiTraba, antidelete, antiviewonce, welcome, detect, antiLink, antiLink2, modohorny, autosticker, audios} = global.db.data.chats[m.chat];
+  const groupAdmins = participants.filter((p) => p.admin);
+  const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n');
+  const owner = groupMetadata.owner || groupAdmins.find((p) => p.admin === 'superadmin')?.id || m.chat.split`-`[0] + '@s.whatsapp.net';
+  const text = `🥰 *INFO GRUPO*
+💌 *ID:*
+→ ${groupMetadata.id}
+💜 *Nombre:*
+→ ${groupMetadata.subject}
+🌟 *Descripción:*
+→ ${groupMetadata.desc?.toString() || 'Sin Descripción'}
+💫 *Miembros:*
+→ ${participants.length} Participantes
+👑 *Creador del Grupo:*
+→ @${owner.split('@')[0]}
+🏆 *Administradores:*
+${listAdmin}
 
-export const command = {
-    name: 'infogp',
-    alias: ['gp', 'groupinfo'],
-    description: 'Muestra la configuración actual del grupo.',
-    async execute(sock, msg, args, groupMetadata) {
-        try {
-            const groupId = msg.key.remoteJid;
-            if (!groupId.endsWith('@g.us')) {
-                await sock.sendMessage(msg.key.remoteJid, { text: '❌ Este comando solo funciona en grupos.' });
-                return;
-            }
+💭 *CONFIGURACIÓN*
 
-            // Verificar si el bot es administrador
-            const botAdmin = await isAdmin(groupId, sock.user.id.split(':')[0] + '@s.whatsapp.net');
-            
-            // Obtener configuraciones guardadas (ejemplo: desde una DB o JSON)
-            const groupData = await getGroupData(groupId) || {
-                antilink: false,
-                welcome: false,
-                nsfw: false,
-            };
-
-            // Formatear la información
-            const infoText = `
-🔍 *INFORMACIÓN DEL GRUPO* 🔍
-
-📌 *Nombre:* ${groupMetadata.subject || 'Desconocido'}
-👥 *Participantes:* ${groupMetadata.participants.length} miembros
-🛡️ *Bot como admin:* ${botAdmin ? '✅ Sí' : '❌ No'}
-
-⚙️ *Configuraciones del Bot:*
-🔗 *Anti-link:* ${groupData.antilink ? '✅ Activado' : '❌ Desactivado'}
-🎉 *Welcome:* ${groupData.welcome ? '✅ Activado' : '❌ Desactivado'}
-🔞 *NSFW:* ${groupData.nsfw ? '✅ Activado' : '❌ Desactivado'}
-            `;
-
-            await sock.sendMessage(groupId, { text: infoText });
-        } catch (error) {
-            console.error('Error en comando infogp:', error);
-            await sock.sendMessage(msg.key.remoteJid, { text: '❌ Ocurrió un error al obtener la información del grupo.' });
-        }
-    },
+◈ *Welcome:* ${welcome ? '✅' : '❌'}
+◈ *Detect:* ${detect ? '✅' : '❌'}  
+◈ *Antilink:* ${antiLink ? '✅' : '❌'} 
+◈ *Antilink 𝟸:* ${antiLink2 ? '✅' : '❌'} 
+◈ *Modohorny:* ${modohorny ? '✅' : '❌'} 
+◈ *Autosticker:* ${autosticker ? '✅' : '❌'} 
+◈ *Audios:* ${audios ? '✅' : '❌'} 
+◈ *Antiver:* ${antiviewonce ? '✅' : '❌'} 
+◈ *Reacción* ${reaction ? "✅️" : "❌️"}
+◈ *Delete:* ${antidelete ? '✅' : '❌'} 
+◈ *Antitoxic:* ${antiToxic ? '✅' : '❌'} 
+◈ *Antitraba:* ${antiTraba ? '✅' : '❌'} 
+`.trim();
+  conn.sendFile(m.chat, pp, 'img.jpg', text, m, false, {mentions: [...groupAdmins.map((v) => v.id), owner]});
 };
-
-export default command;
+handler.help = ['infogrupo'];
+handler.tags = ['grupo'];
+handler.command = ['infogrupo', 'gp'];
+handler.register = true
+handler.group = true;
+export default handler;
