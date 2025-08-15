@@ -1,3 +1,4 @@
+import './plugins/alertas.js';
 import { smsg } from './lib/simple.js'
 import { format } from 'util' 
 import { fileURLToPath } from 'url'
