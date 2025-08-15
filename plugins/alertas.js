@@ -1,36 +1,33 @@
 const handler = async (m, { conn }) => {
-  // Ignora si no es un grupo
-  if (!m.isGroup) return;
-  
-  // Solo reacciona a actualizaciones de participantes
-  if (!m.type === 'participantsUpdate') return;
+  if (!m.isGroup || !Array.isArray(m.participants)) return
 
-  const groupData = await conn.groupMetadata(m.chat);
-  const participants = m.participants;
+  try {
+    // Agrega delay antes de obtener metadata
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    const groupData = await conn.groupMetadata(m.chat).catch(() => null)
+    if (!groupData) return
 
-  participants.forEach(async (user) => {
-    // Caso 1: Usuario promovido a admin
-    if (user.admin === 'admin' || user.admin === 'superadmin') {
-      const actionUser = m.sender.split('@')[0];
-      const targetUser = user.id.split('@')[0];
+    for (const user of m.participants) {
+      // Agrega delay entre cada procesamiento de usuario
+      await new Promise(resolve => setTimeout(resolve, 500))
       
-      await conn.sendMessage(m.chat, {
-        text: `> ❀ @${targetUser} ha sido promovido a administrador por @${actionUser}`,
-        mentions: [user.id, m.sender]
-      });
-    } 
-    // Caso 2: Usuario degradado de admin
-    else if (user.admin === null) {
-      const actionUser = m.sender.split('@')[0];
-      const targetUser = user.id.split('@')[0];
-      
-      await conn.sendMessage(m.chat, {
-        text: `> ❀ @${targetUser} ha sido degradado de administrador por @${actionUser}`,
-        mentions: [user.id, m.sender]
-      });
+      if (['admin', 'superadmin'].includes(user.admin)) {
+        await safeSend(m.chat, {
+          text: `✧ @${user.id.split('@')[0]} promovido por admin`,
+          mentions: [user.id]
+        })
+      } else if (user.admin === null) {
+        await safeSend(m.chat, {
+          text: `✧ @${user.id.split('@')[0]} degradado por admin`,
+          mentions: [user.id]
+        })
+      }
     }
-  });
-};
+  } catch (error) {
+    console.error('Error en alertas:', error)
+  }
+}
 
 // Configuración del plugin
 handler.event = 'group-participants.update';
