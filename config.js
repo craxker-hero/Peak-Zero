@@ -11,7 +11,7 @@ global.prems = []
 
 global.namebot = '🎋 𝖬𝖺𝗈 𝖢𝗁𝖺𝗇 🫑'
 global.packname = '🧩 ᴍᴀᴏ ᴄʜᴀɴ 🌿'
-global.author = '🌿 𝖬𝖺𝖽𝖾 𝗐𝗂𝗍𝗁 𝖻𝗒 • 𝖨𝗓𝗎𝗆𝗂 𝖢𝗈𝗋𝖾'
+global.author = '🌿 𝖬𝖺𝖽𝖾 𝗐𝗂𝗍𝗁 𝖻𝗒 • Craxker'
 global.moneda = '˒˒⭐˓˓ 𝘔𝘢𝘯𝘨𝘰𝘴 🪼'
 
 global.libreria = 'Baileys'
@@ -23,9 +23,7 @@ global.yukiJadibts = true
 
 global.namecanal = '❇️'
 global.idcanal = '120363420466566193@newsletter'
-global.idcanal2 = '120363402159669836@newsletter'
 global.canal = 'https://whatsapp.com/channel/0029Vb5pM031CYoMvQi2I02D'
-global.canalreg = '120363402895449162@newsletter'
 
 global.ch = {
   ch1: '120363420941524030@newsletter'
