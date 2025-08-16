@@ -212,7 +212,7 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
       thumbnailUrl: "https://i.postimg.cc/020wCbhy/ft0bv8.jpg", // URL correcta
       sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
       mediaType: 1,
-      renderLargerThumbnail: false // Desactivado para probar
+      renderLargerThumbnail: true // Desactivado para probar
     }
   }
 }, { quoted: m });
