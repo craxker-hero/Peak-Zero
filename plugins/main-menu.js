@@ -11,7 +11,7 @@ const tags = {
   info: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🌻  *`𝖨𝗇ẜᨣ`*     ׅ🌻ׁ᷒ᮬ    ׅ',
   gacha: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🌸  *`𝖠𝗇ı𝗆ᧉ`*     ׅ🌸ׁ᷒ᮬ    ׅ',
   group: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🪹  *`Gꭇ𝗎𝗉ᨣ𝗌`*     ׅ🪹ׁ᷒ᮬ    ׅ',
-  search: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🐞  *`𝖨𝗇ƚᧉꭇ𝗇ᧉƚ`*     ׅ🐞ׁ᷒ᮬ    ׅ',
+  search: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🐞  *`𝖨𝗇ƚᧉꭇ𝗇ᧉƚ`*     ׅ🐞ׁ᷒ᮬ    ׅ', 
   sticker: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🍒  *`𝖲ƚ𝗂𝖼𝗄ᧉꭇ`*     ׅ🍒ׁ᷒ᮬ    ׅ',
   ia: '⁞)᷼͝ㅤ֯ㅤֶָ֢  🍓  *`𝖨𝗇ƚᧉ𝖨ı𝗀ᧉ𝗇𝖼ı𝖺𝗌`*     ׅ🍓ׁ᷒ᮬ    ׅ',
   channel: '*⁞)᷼͝ㅤ֯ㅤֶָ֢  🍥  `𝖢𝖺𝗇𝖺𝗅ᧉ𝗌`*     ׅ🍥ׁ᷒ᮬ    ׅ',
@@ -209,10 +209,10 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     externalAdReply: {
       title: nombreBot,
       body: date,
-      thumbnailUrl: bannerFinal, // Asegúrate de que esta imagen sea cuadrada (1:1)
+      thumbnailUrl: bannerFinal, // Asegúrate de que esta URL apunte a una imagen cuadrada
       sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
       mediaType: 1,
-      renderLargerThumbnail: false // Prueba con false
+      renderLargerThumbnail: true // Esto puede ayudar, pero la imagen debe ser cuadrada
     }
   }
 }, { quoted: m });
