@@ -203,19 +203,19 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     )
 
     await conn.sendMessage(m.chat, {
-      text: estilo(text),
-      mentions: [m.sender, owner],
-      contextInfo: {
-        externalAdReply: {
-          title: nombreBot,
-          body: date,
-          thumbnailUrl: bannerFinal,
-          sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
-          mediaType: 1,
-          renderLargerThumbnail: true
-        }
-      }
-    }, { quoted: m })
+  text: estilo(text),
+  mentions: [m.sender, owner],
+  contextInfo: {
+    externalAdReply: {
+      title: nombreBot,
+      body: date,
+      thumbnailUrl: bannerFinal, // Asegúrate de que esta imagen sea cuadrada (1:1)
+      sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
+      mediaType: 1,
+      renderLargerThumbnail: false // Prueba con false
+    }
+  }
+}, { quoted: m });
   } catch (e) {
     console.error('Error en el menú:', e)
     conn.reply(m.chat, '❎ Lo sentimos, el menú tiene un error.', m)
