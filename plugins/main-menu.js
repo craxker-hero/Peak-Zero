@@ -209,10 +209,10 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     externalAdReply: {
       title: nombreBot,
       body: date,
-      thumbnailUrl: "https://files.catbox.moe/ft0bv8.jpg", // 1:1
+      thumbnailUrl: "https://i.postimg.cc/020wCbhy/ft0bv8.jpg", // URL correcta
       sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
       mediaType: 1,
-      renderLargerThumbnail: true // Experimenta con esto
+      renderLargerThumbnail: false // Desactivado para probar
     }
   }
 }, { quoted: m });
