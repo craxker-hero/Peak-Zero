@@ -209,10 +209,10 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     externalAdReply: {
       title: nombreBot,
       body: date,
-      thumbnailUrl: bannerFinal, // Asegúrate de que esta URL apunte a una imagen cuadrada
+      thumbnailUrl: "https://files.catbox.moe/ft0bv8.jpg", // 1:1
       sourceUrl: 'https://whatsapp.com/channel/0029VbArz9fAO7RGy2915k3O',
       mediaType: 1,
-      renderLargerThumbnail: true // Esto puede ayudar, pero la imagen debe ser cuadrada
+      renderLargerThumbnail: true // Experimenta con esto
     }
   }
 }, { quoted: m });
